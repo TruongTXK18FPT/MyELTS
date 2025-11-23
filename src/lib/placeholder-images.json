@@ -1,3 +1,52 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-mockup-1",
+      "description": "Mockup of the AI chat interface.",
+      "imageUrl": "https://images.unsplash.com/photo-1667284152849-850edc1b341e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxhcHAlMjBpbnRlcmZhY2V8ZW58MHx8fHwxNzYzODI3ODIxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "app interface"
+    },
+    {
+      "id": "hero-mockup-2",
+      "description": "Mockup of the dashboard with charts.",
+      "imageUrl": "https://images.unsplash.com/photo-1763038311036-6d18805537e5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxkYXNoYm9hcmQlMjBjaGFydHxlbnwwfHx8fDE3NjM3NTkyMjB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "dashboard chart"
+    },
+    {
+      "id": "hero-mockup-3",
+      "description": "Mockup of a vocabulary card.",
+      "imageUrl": "https://images.unsplash.com/photo-1585314062528-0c3742fa6102?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxmbGFzaGNhcmQlMjBsZWFybmluZ3xlbnwwfHx8fDE3NjM4NzU3MDZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "flashcard learning"
+    },
+    {
+      "id": "vocab-education",
+      "description": "Image related to education for vocabulary.",
+      "imageUrl": "https://images.unsplash.com/photo-1613412007998-214b3bd9f760?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxib29rcyUyMGxpYnJhcnl8ZW58MHx8fHwxNzYzNzc3NTE3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "books library"
+    },
+    {
+      "id": "vocab-environment",
+      "description": "Image related to environment for vocabulary.",
+      "imageUrl": "https://images.unsplash.com/photo-1656839185691-a3b5ed488666?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8Zm9yZXN0JTIwbmF0dXJlfGVufDB8fHx8MTc2Mzc2NTA0Mnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "forest nature"
+    },
+    {
+      "id": "vocab-technology",
+      "description": "Image related to technology for vocabulary.",
+      "imageUrl": "https://images.unsplash.com/photo-1631375937044-6dd5beac01d2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxjaXJjdWl0JTIwYm9hcmR8ZW58MHx8fHwxNzYzODQ4MjM3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "circuit board"
+    },
+    {
+      "id": "user-avatar-1",
+      "description": "User avatar.",
+      "imageUrl": "https://images.unsplash.com/photo-1531123414780-f74242c2b052?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cGVyc29uJTIwcG9ydHJhaXR8ZW58MHx8fHwxNzYzODQwMDk2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person portrait"
+    },
+    {
+      "id": "user-avatar-2",
+      "description": "AI Tutor avatar.",
+      "imageUrl": "https://images.unsplash.com/photo-1522865566378-a8b4d1344d24?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxyb2JvdCUyMGhlYWR8ZW58MHx8fHwxNzYzNzcyMjQ4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "robot head"
+    }
+  ]
 }
