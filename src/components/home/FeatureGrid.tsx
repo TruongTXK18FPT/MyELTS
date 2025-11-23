@@ -1,7 +1,7 @@
 import { SectionTitle } from '@/components/ui/SectionTitle';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BookOpenCheck, BotMessageSquare, AreaChart, Route, Sparkles } from 'lucide-react';
+import { BookOpenCheck, BotMessageSquare, AreaChart, Route, Sparkles, PencilRuler } from 'lucide-react';
 
 const features = [
   {
@@ -33,6 +33,12 @@ const features = [
     title: 'Academic Dashboard',
     description: 'Theo dõi tiến độ, xem lại lịch sử bài làm và nhận báo cáo chi tiết về năng lực của bạn.',
   },
+   {
+    icon: <PencilRuler className="h-8 w-8 text-primary" />,
+    title: 'Speaking & Writing',
+    description: 'AI chấm điểm và phân tích lỗi chi tiết cho bài nói và bài viết của bạn.',
+    badge: 'AI Inside',
+  },
 ];
 
 export function FeatureGrid() {
@@ -44,14 +50,14 @@ export function FeatureGrid() {
       />
       <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {features.map((feature, index) => (
-          <Card key={index} className="group transform-gpu transition-all hover:-translate-y-2 hover:shadow-xl hover:shadow-primary/20">
-            <CardHeader>
+          <Card key={index} className="group transform-gpu transition-all hover:-translate-y-2 hover:shadow-xl hover:shadow-primary/20 bg-white">
+            <CardHeader className="p-8">
               <div className="flex items-start justify-between">
                 {feature.icon}
                 {feature.badge && <Badge variant="secondary">{feature.badge}</Badge>}
               </div>
-              <CardTitle className="pt-4">{feature.title}</CardTitle>
-              <CardDescription>{feature.description}</CardDescription>
+              <CardTitle className="pt-4 text-xl">{feature.title}</CardTitle>
+              <CardDescription className="text-base">{feature.description}</CardDescription>
             </CardHeader>
           </Card>
         ))}

@@ -13,7 +13,7 @@ export function HeroSection() {
     <section className="container pt-12 pb-12 md:pt-24">
       <div className="grid grid-cols-1 gap-12 md:grid-cols-2 md:gap-8">
         <div className="flex flex-col items-center text-center md:items-start md:text-left">
-          <Badge variant="outline" className="border-primary-soft bg-primary-light text-primary-dark font-medium mb-4">
+          <Badge variant="outline" className="border-primary-soft bg-primary-light text-primary-dark font-semibold mb-4 uppercase">
             AI-powered IELTS platform
           </Badge>
           <h1 className="font-headline text-4xl font-bold tracking-tight text-text-main sm:text-5xl md:text-6xl">
