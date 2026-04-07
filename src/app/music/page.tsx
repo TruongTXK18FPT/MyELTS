@@ -79,7 +79,7 @@ export default function MusicPage() {
     try {
       const res = await fetch('/api/music/playlists');
       const data = await res.json();
-      setPlaylists(data || []);
+      setPlaylists(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching playlists:', error);
     } finally {

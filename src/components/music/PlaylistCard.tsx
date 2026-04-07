@@ -50,7 +50,7 @@ export function PlaylistCard({ playlist, onDelete, onUpdate }: PlaylistCardProps
 
   const isOwner = session?.user?.id === playlist.createdById;
   const trackCount = playlist._count.tracks;
-  const tracks = playlist.tracks.map((pt) => pt.track);
+  const tracks = (playlist.tracks || []).map((pt) => pt.track);
 
   const handlePlay = () => {
     if (tracks.length === 0) {

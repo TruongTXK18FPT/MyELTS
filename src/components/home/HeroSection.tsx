@@ -28,7 +28,7 @@ export function HeroSection() {
               size="lg"
               className="rounded-full px-8 py-6 text-base font-semibold shadow-lg shadow-primary/30 bg-gradient-to-r from-primary to-primary-dark text-white hover:brightness-105"
             >
-              <Link href="/register">Bắt đầu học ngay</Link>
+              <Link href="/auth/register">Bắt đầu học ngay</Link>
             </Button>
             <Button
               variant="outline"
