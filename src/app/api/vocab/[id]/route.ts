@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { z } from 'zod';
 import { buildVocabularyNotes } from '@/lib/vocabulary-seed';
 import { capitalizeVocabularyWord, isVietnameseMeaning } from '@/lib/vocabulary';
 
+type RouteParams = { id: string };
+type RouteContext = { params: Promise<RouteParams> | RouteParams };
+
 const nullableLimited = (max: number) => z.string().trim().max(max).nullable().optional();
 
-const createVocabSchema = z.object({
+const updateVocabSchema = z.object({
   word: z.string().trim().min(1, 'Từ vựng là bắt buộc.').max(120),
   image: z.string().trim().url().nullable().optional(),
   grammar: nullableLimited(120),
@@ -28,15 +31,47 @@ const createVocabSchema = z.object({
   notes: nullableLimited(3000),
 });
 
-export async function POST(req: Request) {
+async function getRouteId(context: RouteContext): Promise<string> {
+  const params = await Promise.resolve(context.params);
+  return params.id;
+}
+
+export async function PUT(req: Request, context: RouteContext) {
   try {
     const session = await auth();
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Bạn cần đăng nhập.' }, { status: 401 });
     }
 
-    const payload = createVocabSchema.parse(await req.json());
+    const id = await getRouteId(context);
+    const payload = updateVocabSchema.parse(await req.json());
     const normalizedWord = capitalizeVocabularyWord(payload.word);
+
+    const ownedVocab = await prisma.vocab.findFirst({
+      where: { id, userId: session.user.id },
+      select: { id: true },
+    });
+
+    if (!ownedVocab) {
+      return NextResponse.json({ error: 'Không tìm thấy từ vựng để cập nhật.' }, { status: 404 });
+    }
+
+    const duplicated = await prisma.vocab.findFirst({
+      where: {
+        userId: session.user.id,
+        id: { not: id },
+        word: {
+          equals: normalizedWord,
+          mode: 'insensitive',
+        },
+      },
+      select: { id: true },
+    });
+
+    if (duplicated) {
+      return NextResponse.json({ error: 'Từ vựng này đã tồn tại trong danh sách của bạn.' }, { status: 409 });
+    }
 
     const legacyNotes =
       payload.notes ||
@@ -54,22 +89,8 @@ export async function POST(req: Request) {
       }) ||
       null;
 
-    const existing = await prisma.vocab.findFirst({
-      where: {
-        userId: session.user.id,
-        word: {
-          equals: normalizedWord,
-          mode: 'insensitive',
-        },
-      },
-      select: { id: true },
-    });
-
-    if (existing) {
-      return NextResponse.json({ error: 'Từ vựng này đã tồn tại trong danh sách của bạn.' }, { status: 409 });
-    }
-
-    const vocab = await prisma.vocab.create({
+    const updated = await prisma.vocab.update({
+      where: { id },
       data: {
         word: normalizedWord,
         image: payload.image || null,
@@ -87,17 +108,44 @@ export async function POST(req: Request) {
         v2Form: payload.v2Form || null,
         v3Form: payload.v3Form || null,
         notes: legacyNotes,
-        userId: session.user.id,
-      }
+      },
     });
 
-    return NextResponse.json(vocab, { status: 201 });
+    return NextResponse.json(updated);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.issues[0]?.message || 'Dữ liệu gửi lên không hợp lệ.' }, { status: 400 });
     }
 
     console.error(error);
-    return NextResponse.json({ error: 'Không thể tạo từ vựng.' }, { status: 500 });
+    return NextResponse.json({ error: 'Không thể cập nhật từ vựng.' }, { status: 500 });
+  }
+}
+
+export async function DELETE(_req: Request, context: RouteContext) {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Bạn cần đăng nhập.' }, { status: 401 });
+    }
+
+    const id = await getRouteId(context);
+
+    const deleted = await prisma.vocab.deleteMany({
+      where: {
+        id,
+        userId: session.user.id,
+      },
+    });
+
+    if (deleted.count === 0) {
+      return NextResponse.json({ error: 'Không tìm thấy từ vựng để xóa.' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: 'Không thể xóa từ vựng.' }, { status: 500 });
   }
 }

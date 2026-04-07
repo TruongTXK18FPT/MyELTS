@@ -64,6 +64,16 @@ model Vocab {
   grammar       String?
   pronunciation String?
   category      String?
+  meaning       String?
+  example       String?
+  usageContext  String?
+  note          String?
+  synonym       String?
+  antonym       String?
+  singularForm  String?
+  pluralForm    String?
+  v2Form        String?
+  v3Form        String?
   notes         String?
   userId        String
   createdAt     DateTime @default(now())

@@ -2,15 +2,16 @@
 
 import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useState, useRef, useEffect } from 'react';
-import { LogOut, UploadCloud, UserCircle, BookOpen } from 'lucide-react';
+import { Camera, LogOut, UploadCloud, UserCircle, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ProfilePage() {
   const { data: session, update } = useSession();
   const [uploading, setUploading] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [stats, setStats] = useState({ vocabCount: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -32,16 +33,14 @@ export default function ProfilePage() {
     return <div className="p-8 text-center">Vui lòng đăng nhập...</div>;
   }
 
-  const handleAvatarHover = () => {
-    if (fileInputRef.current) fileInputRef.current.style.display = 'block';
-  };
-
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
       setUploading(true);
+      setAvatarPreview(URL.createObjectURL(file));
+
       const formData = new FormData();
       formData.append('file', file);
       formData.append('folder', 'myelts/avatars');
@@ -63,14 +62,18 @@ export default function ProfilePage() {
 
       if (updateRes.ok) {
         await update({ image: url });
+        setAvatarPreview(url);
       }
     } catch (err) {
       console.error(err);
       alert("Cập nhật avatar thất bại");
     } finally {
       setUploading(false);
+      e.target.value = '';
     }
   };
+
+  const currentAvatar = avatarPreview || session.user.image || '';
 
   return (
     <div className="container max-w-4xl mx-auto p-4 py-12">
@@ -78,16 +81,25 @@ export default function ProfilePage() {
         {/* Cột trái: Thông tin cá nhân */}
         <Card className="md:col-span-1 shadow-xl">
           <CardHeader className="text-center">
-            <div className="relative inline-block mx-auto mb-4 group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+            <div className="mx-auto mb-4 text-center">
+              <div className="relative inline-flex">
               <Avatar className="w-32 h-32 border-4 border-primary">
-                <AvatarImage src={session.user.image || ''} alt={session.user.name || 'User'} className="object-cover" />
+                <AvatarImage src={currentAvatar} alt={session.user.name || 'User'} className="object-cover" />
                 <AvatarFallback className="text-4xl text-primary bg-primary/10">
                   {session.user.name?.charAt(0) || <UserCircle className="w-16 h-16" />}
                 </AvatarFallback>
               </Avatar>
-              <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                {uploading ? <span className="text-white text-sm">Đang tải...</span> : <UploadCloud className="text-white w-8 h-8" />}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="absolute -bottom-1 -right-1 rounded-full border-2 border-white bg-primary p-2 text-white shadow-md transition-transform hover:scale-105 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  <Camera className="h-4 w-4" />
+                  <span className="sr-only">Đổi avatar</span>
+                </button>
               </div>
+              <p className="mt-3 text-xs text-muted-foreground">Nhấn biểu tượng máy ảnh để thay avatar</p>
               <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleAvatarUpload} />
             </div>
             <CardTitle>{session.user.name}</CardTitle>
@@ -118,10 +130,10 @@ export default function ProfilePage() {
 
             <div className="mt-8 space-y-4">
               <h4 className="font-semibold text-lg border-b pb-2">Hành động nhanh</h4>
-              <Link href="/vocab/upload">
+              <Link href="/vocabulary">
                 <Button className="w-full bg-gradient-to-r from-primary to-primary/80 hover:scale-[1.02] transition-transform text-white py-6">
                   <UploadCloud className="w-5 h-5 mr-2" />
-                  Thêm từ vựng mới
+                  Mở trang Vocabulary
                 </Button>
               </Link>
             </div>

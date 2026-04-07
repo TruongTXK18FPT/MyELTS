@@ -12,7 +12,7 @@ export interface InputProps
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, label, error, name, ...props }, ref) => {
     const id = name || React.useId()
-    const containerClass = props.type === 'checkbox' ? 'flex flex-row-reverse items-center gap-2' : 'w-full';
+    const containerClass = type === 'checkbox' ? 'flex flex-row-reverse items-center gap-2' : 'w-full';
 
 
     return (

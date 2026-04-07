@@ -33,11 +33,11 @@ export function Footer() {
             <ul className="space-y-2">
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-primary" />
-                <span className="text-sm text-text-muted">support@myelts.com</span>
+                <span className="text-sm text-text-muted">tranxuantin1234@gmail.com</span>
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-primary" />
-                <span className="text-sm text-text-muted">0123 456 789</span>
+                <span className="text-sm text-text-muted">0931430662</span>
               </li>
             </ul>
           </div>
@@ -45,9 +45,7 @@ export function Footer() {
           <div>
             <h3 className="font-headline font-semibold text-text-main mb-4">Theo dõi chúng tôi</h3>
             <div className="flex space-x-4">
-                <Link href="#" className="text-text-muted hover:text-primary transition-colors"><Twitter className="h-5 w-5" /></Link>
-                <Link href="#" className="text-text-muted hover:text-primary transition-colors"><Facebook className="h-5 w-5" /></Link>
-                <Link href="#" className="text-text-muted hover:text-primary transition-colors"><Instagram className="h-5 w-5" /></Link>
+                <Link href="https://www.facebook.com/tung.tung.tung.sahur110524/" className="text-text-muted hover:text-primary transition-colors"><Facebook className="h-5 w-5" /></Link>
             </div>
           </div>
         </div>

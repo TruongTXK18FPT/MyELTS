@@ -5,12 +5,12 @@ import { Input } from '@/components/ui/input';
 import { ChipFilter } from '@/components/ui/ChipFilter';
 import { Search } from 'lucide-react';
 
-const topics = ['Education', 'Environment', 'Technology', 'Health', 'Work'];
+const topics = ['Giáo dục', 'Môi trường', 'Công nghệ', 'Sức khỏe', 'Công việc'];
 const bands = ['4.0-5.0', '5.5-6.5', '7.0+'];
 const sorts = ['A-Z', 'Z-A', 'Độ khó'];
 
 export function VocabularyFilterBar() {
-  const [activeTopic, setActiveTopic] = useState('Education');
+  const [activeTopic, setActiveTopic] = useState('Giáo dục');
   const [activeBand, setActiveBand] = useState('5.5-6.5');
   const [activeSort, setActiveSort] = useState('A-Z');
 
@@ -32,7 +32,7 @@ export function VocabularyFilterBar() {
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium text-text-muted mr-2">Band:</span>
+        <span className="text-sm font-medium text-text-muted mr-2">Trình độ:</span>
         {bands.map((band) => (
           <ChipFilter
             key={band}

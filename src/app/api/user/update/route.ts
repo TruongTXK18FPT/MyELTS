@@ -11,9 +11,16 @@ export async function POST(req: Request) {
 
     const { image } = await req.json();
 
+    if (!image || typeof image !== 'string') {
+      return NextResponse.json({ error: 'Invalid image payload' }, { status: 400 });
+    }
+
     const updated = await prisma.user.update({
       where: { id: session.user.id },
-      data: { image }
+      data: {
+        image,
+        avatar: image,
+      }
     });
 
     return NextResponse.json(updated);

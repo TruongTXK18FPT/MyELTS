@@ -1,6 +1,5 @@
-import { VocabularyHeader } from '@/components/vocabulary/VocabularyHeader';
-import { VocabularyManager } from '@/components/vocabulary/VocabularyManager';
 import type { VocabularyItem } from '@/components/vocabulary/VocabularyList';
+import { VocabularyFormManager } from '@/components/vocabulary/VocabularyFormManager';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { buildVocabularyNotes, vocabularySeedEntries } from '@/lib/vocabulary-seed';
@@ -29,19 +28,20 @@ async function seedVocabularyForUser(userId: string) {
       pluralForm: entry.pluralForm || null,
       v2Form: entry.v2Form || null,
       v3Form: entry.v3Form || null,
-      notes: buildVocabularyNotes({
-        meaning: entry.meaning,
-        example: entry.example,
-        usageContext: entry.usageContext,
-        note: entry.note,
-        synonym: entry.synonym,
-        antonym: entry.antonym,
-        singularForm: entry.singularForm,
-        pluralForm: entry.pluralForm,
-        v2Form: entry.v2Form,
-        v3Form: entry.v3Form,
-        notes: entry.notes,
-      }) || null,
+      notes:
+        buildVocabularyNotes({
+          meaning: entry.meaning,
+          example: entry.example,
+          usageContext: entry.usageContext,
+          note: entry.note,
+          synonym: entry.synonym,
+          antonym: entry.antonym,
+          singularForm: entry.singularForm,
+          pluralForm: entry.pluralForm,
+          v2Form: entry.v2Form,
+          v3Form: entry.v3Form,
+          notes: entry.notes,
+        }) || null,
       image: null,
     })),
   });
@@ -64,25 +64,26 @@ function mapSeedToVocabularyItems(): VocabularyItem[] {
     pluralForm: entry.pluralForm || null,
     v2Form: entry.v2Form || null,
     v3Form: entry.v3Form || null,
-    notes: buildVocabularyNotes({
-      meaning: entry.meaning,
-      example: entry.example,
-      usageContext: entry.usageContext,
-      note: entry.note,
-      synonym: entry.synonym,
-      antonym: entry.antonym,
-      singularForm: entry.singularForm,
-      pluralForm: entry.pluralForm,
-      v2Form: entry.v2Form,
-      v3Form: entry.v3Form,
-      notes: entry.notes,
-    }) || null,
+    notes:
+      buildVocabularyNotes({
+        meaning: entry.meaning,
+        example: entry.example,
+        usageContext: entry.usageContext,
+        note: entry.note,
+        synonym: entry.synonym,
+        antonym: entry.antonym,
+        singularForm: entry.singularForm,
+        pluralForm: entry.pluralForm,
+        v2Form: entry.v2Form,
+        v3Form: entry.v3Form,
+        notes: entry.notes,
+      }) || null,
     image: null,
     createdAt: new Date(0).toISOString(),
   }));
 }
 
-export default async function VocabularyPage() {
+export default async function VocabularyManagePage() {
   const session = await auth();
 
   let initialVocabulary: VocabularyItem[] = mapSeedToVocabularyItems();
@@ -119,8 +120,7 @@ export default async function VocabularyPage() {
 
   return (
     <div className="container py-8 md:py-12">
-      <VocabularyHeader />
-      <VocabularyManager initialVocabulary={initialVocabulary} />
+      <VocabularyFormManager initialVocabulary={initialVocabulary} />
     </div>
   );
 }
