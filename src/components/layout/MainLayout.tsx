@@ -1,5 +1,6 @@
 import { Header } from './Header';
 import { Footer } from './Footer';
+import { MusicRobot } from '@/components/music/MusicRobot';
 
 type MainLayoutProps = {
   children: React.ReactNode;
@@ -13,6 +14,8 @@ export function MainLayout({ children }: MainLayoutProps) {
         {children}
       </main>
       <Footer />
+      <MusicRobot />
     </div>
   );
 }
+

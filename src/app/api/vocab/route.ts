@@ -56,7 +56,6 @@ export async function POST(req: Request) {
 
     const existing = await prisma.vocab.findFirst({
       where: {
-        userId: session.user.id,
         word: {
           equals: normalizedWord,
           mode: 'insensitive',
@@ -66,7 +65,7 @@ export async function POST(req: Request) {
     });
 
     if (existing) {
-      return NextResponse.json({ error: 'Từ vựng này đã tồn tại trong danh sách của bạn.' }, { status: 409 });
+      return NextResponse.json({ error: 'Từ vựng này đã tồn tại trong hệ thống.' }, { status: 409 });
     }
 
     const vocab = await prisma.vocab.create({

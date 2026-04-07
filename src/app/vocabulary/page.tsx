@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { buildVocabularyNotes, vocabularySeedEntries } from '@/lib/vocabulary-seed';
 
 async function seedVocabularyForUser(userId: string) {
-  const vocabCount = await prisma.vocab.count({ where: { userId } });
+  const vocabCount = await prisma.vocab.count();
 
   if (vocabCount > 0) {
     return;
@@ -91,7 +91,6 @@ export default async function VocabularyPage() {
     await seedVocabularyForUser(session.user.id);
 
     const dbVocabulary = await prisma.vocab.findMany({
-      where: { userId: session.user.id },
       orderBy: { createdAt: 'desc' },
     });
 

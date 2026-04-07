@@ -255,9 +255,8 @@ async function callMistralForJson(userPrompt: string): Promise<unknown> {
   }
 }
 
-async function getExistingWordSet(userId: string): Promise<Set<string>> {
+async function getExistingWordSet(): Promise<Set<string>> {
   const words = await prisma.vocab.findMany({
-    where: { userId },
     select: { word: true },
   });
 
@@ -333,7 +332,7 @@ Rules:
         ? `Target part(s) of speech: ${grammarFilters.join(', ')}.`
         : 'You may mix noun, verb, adjective, adverb, phrasal verb, collocation, and idiom.';
 
-    const existingWordSet = await getExistingWordSet(session.user.id);
+    const existingWordSet = await getExistingWordSet();
     const blockedWords = Array.from(existingWordSet).slice(0, 220);
 
     const aiJson = await callMistralForJson(`

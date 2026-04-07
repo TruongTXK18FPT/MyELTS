@@ -9,9 +9,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const vocabCount = await prisma.vocab.count({
-      where: { userId: session.user.id }
-    });
+    const vocabCount = await prisma.vocab.count();
 
     return NextResponse.json({ vocabCount });
   } catch (error) {

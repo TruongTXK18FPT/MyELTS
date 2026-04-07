@@ -49,7 +49,7 @@ export async function PUT(req: Request, context: RouteContext) {
     const normalizedWord = capitalizeVocabularyWord(payload.word);
 
     const ownedVocab = await prisma.vocab.findFirst({
-      where: { id, userId: session.user.id },
+      where: { id },
       select: { id: true },
     });
 
@@ -59,7 +59,6 @@ export async function PUT(req: Request, context: RouteContext) {
 
     const duplicated = await prisma.vocab.findFirst({
       where: {
-        userId: session.user.id,
         id: { not: id },
         word: {
           equals: normalizedWord,
@@ -70,7 +69,7 @@ export async function PUT(req: Request, context: RouteContext) {
     });
 
     if (duplicated) {
-      return NextResponse.json({ error: 'Từ vựng này đã tồn tại trong danh sách của bạn.' }, { status: 409 });
+      return NextResponse.json({ error: 'Từ vựng này đã tồn tại trong hệ thống.' }, { status: 409 });
     }
 
     const legacyNotes =
@@ -135,7 +134,6 @@ export async function DELETE(_req: Request, context: RouteContext) {
     const deleted = await prisma.vocab.deleteMany({
       where: {
         id,
-        userId: session.user.id,
       },
     });
 

@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -14,16 +15,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Menu, GraduationCap, LogOut, UserCircle2 } from 'lucide-react';
+import { Menu, LogOut, UserCircle2, Map, Home, BookOpen, PenTool, MessageSquare, LayoutDashboard, Music } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// Import icons for header
+import logoImg from '@/assets/logo.png';
+
 const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/vocabulary', label: 'Vocabulary' },
-  { href: '/tests', label: 'Tests' },
-  { href: '/ai-chat', label: 'AI Chat' },
-  { href: '/roadmap', label: 'Roadmap' },
-  { href: '/dashboard', label: 'Dashboard' },
+  { href: '/', label: 'Home', isLucide: true, LucideIcon: Home },
+  { href: '/vocabulary', label: 'Vocabulary', isLucide: true, LucideIcon: BookOpen },
+  { href: '/tests', label: 'Tests', isLucide: true, LucideIcon: PenTool },
+  { href: '/ai-chat', label: 'AI Chat', isLucide: true, LucideIcon: MessageSquare },
+  { href: '/music', label: 'Music', isLucide: true, LucideIcon: Music },
+  { href: '/roadmap', label: 'Roadmap', isLucide: true, LucideIcon: Map },
+  { href: '/dashboard', label: 'Dashboard', isLucide: true, LucideIcon: LayoutDashboard },
 ];
 
 export function Header() {
@@ -38,8 +43,8 @@ export function Header() {
   const renderNavLinks = (isMobile: boolean) => (
     <nav
       className={cn(
-        'flex items-center gap-4',
-        isMobile ? 'flex-col items-start gap-4 pt-8' : 'hidden md:flex'
+        'flex items-center gap-6',
+        isMobile ? 'flex-col items-start gap-4 pt-8' : 'hidden lg:flex'
       )}
     >
       {navLinks.map((link) => (
@@ -47,10 +52,11 @@ export function Header() {
           key={link.href}
           href={link.href}
           className={cn(
-            'text-sm font-medium transition-colors hover:text-primary-dark',
+            'flex items-center gap-2 text-sm font-semibold transition-all hover:text-primary-dark hover:scale-105',
             pathname === link.href ? 'text-primary-dark' : 'text-text-muted'
           )}
         >
+          <link.LucideIcon className="h-6 w-6 text-primary drop-shadow-sm" />
           {link.label}
         </Link>
       ))}
@@ -58,18 +64,18 @@ export function Header() {
   );
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <GraduationCap className="h-7 w-7 text-primary" />
-          <span className="font-headline text-xl font-bold text-text-main">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
+      <div className="container flex h-20 items-center justify-between">
+        <Link href="/" className="flex items-center gap-3 transition-transform hover:scale-105">
+          <Image src={logoImg} alt="MyELTS Logo" width={48} height={48} className="object-contain drop-shadow-md" />
+          <span className="font-headline text-3xl font-extrabold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent">
             MyELTS
           </span>
         </Link>
 
         {renderNavLinks(false)}
 
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-2 lg:flex">
           {session?.user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -121,7 +127,7 @@ export function Header() {
           )}
         </div>
 
-        <div className="md:hidden">
+        <div className="lg:hidden">
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
@@ -129,10 +135,11 @@ export function Header() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right">
+              <SheetTitle className="sr-only">Menu Điều Hướng</SheetTitle>
               <div className="flex flex-col gap-8">
-                <Link href="/" className="flex items-center gap-2">
-                    <GraduationCap className="h-7 w-7 text-primary" />
-                    <span className="font-headline text-xl font-bold text-text-main">
+                <Link href="/" className="flex items-center gap-3">
+                    <Image src={logoImg} alt="MyELTS Logo" width={48} height={48} className="object-contain drop-shadow-md" />
+                    <span className="font-headline text-3xl font-extrabold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent">
                         MyELTS
                     </span>
                 </Link>

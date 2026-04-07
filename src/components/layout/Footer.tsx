@@ -1,15 +1,17 @@
 import Link from 'next/link';
-import { GraduationCap, Mail, Phone, Twitter, Facebook, Instagram } from 'lucide-react';
+import Image from 'next/image';
+import { Mail, Phone, Twitter, Facebook, Instagram } from 'lucide-react';
+import logoImg from '@/assets/logo.png';
 
 export function Footer() {
   return (
-    <footer className="bg-secondary/50 pt-16 pb-8">
+    <footer className="bg-secondary/50 pt-16 pb-8 border-t border-border/40">
       <div className="container">
         <div className="grid grid-cols-1 gap-12 md:grid-cols-4">
           <div className="md:col-span-1">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <GraduationCap className="h-8 w-8 text-primary" />
-              <span className="font-headline text-2xl font-bold text-text-main">
+            <Link href="/" className="flex items-center gap-3 mb-6 transition-transform hover:scale-105 w-fit">
+              <Image src={logoImg} alt="MyELTS Logo" width={64} height={64} className="object-contain drop-shadow-md" />
+              <span className="font-headline text-4xl font-extrabold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent">
                 MyELTS
               </span>
             </Link>
