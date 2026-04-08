@@ -118,6 +118,7 @@ export function GrammarFormManager({ initialGrammar }: GrammarFormManagerProps) 
 
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
 
   const selectedItem = useMemo(
     () => (editingId ? grammar.find((item) => item.id === editingId) || null : null),
@@ -307,6 +308,55 @@ export function GrammarFormManager({ initialGrammar }: GrammarFormManagerProps) 
     }
   };
 
+  const onDeleteAll = async () => {
+    if (!session?.user) {
+      setStatus({ type: 'error', message: 'Vui lòng đăng nhập để xóa dữ liệu ngữ pháp.' });
+      return;
+    }
+
+    if (grammar.length === 0) {
+      setStatus({ type: 'success', message: 'Kho ngữ pháp hiện đã trống.' });
+      return;
+    }
+
+    const confirmed = window.confirm(
+      'Bạn có chắc muốn xóa toàn bộ chủ điểm ngữ pháp trong tài khoản này? Hành động này không thể hoàn tác.'
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setDeletingAll(true);
+      setStatus(null);
+
+      const response = await fetch('/api/grammar', {
+        method: 'DELETE',
+      });
+
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Không thể xóa toàn bộ chủ điểm ngữ pháp.');
+      }
+
+      setGrammar([]);
+      resetFormForNew();
+
+      const deletedCount = Number(payload?.deletedCount || 0);
+      setStatus({
+        type: 'success',
+        message: deletedCount > 0 ? `Đã xóa ${deletedCount} chủ điểm ngữ pháp.` : 'Kho ngữ pháp hiện đã trống.',
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Đã xảy ra lỗi không xác định.';
+      setStatus({ type: 'error', message });
+    } finally {
+      setDeletingAll(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-center gap-3">
@@ -320,6 +370,25 @@ export function GrammarFormManager({ initialGrammar }: GrammarFormManagerProps) 
         <Button type="button" onClick={resetFormForNew}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Tạo chủ điểm mới
+        </Button>
+
+        <Button
+          type="button"
+          variant="destructive"
+          onClick={onDeleteAll}
+          disabled={submitting || deleting || deletingAll || !session?.user || grammar.length === 0}
+        >
+          {deletingAll ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Đang xóa toàn bộ...
+            </>
+          ) : (
+            <>
+              <Trash2 className="mr-2 h-4 w-4" />
+              Xóa toàn bộ ngữ pháp
+            </>
+          )}
         </Button>
       </div>
 
@@ -433,7 +502,7 @@ export function GrammarFormManager({ initialGrammar }: GrammarFormManagerProps) 
                     rows={4}
                     value={form.structurePattern}
                     onChange={(event) => onFieldChange('structurePattern', event.target.value)}
-                    placeholder="S + have/has + V3 ..."
+                    placeholder="Khẳng định: ... | Phủ định: ... | Nghi vấn: ..."
                   />
                 </div>
               </div>
@@ -476,7 +545,7 @@ export function GrammarFormManager({ initialGrammar }: GrammarFormManagerProps) 
               <div className="flex flex-col gap-3 pt-2 md:flex-row">
                 <Button
                   type="submit"
-                  disabled={submitting || deleting || !session?.user}
+                  disabled={submitting || deleting || deletingAll || !session?.user}
                   className="w-full rounded-xl bg-gradient-to-r from-primary to-primary-dark py-6 text-base text-white"
                 >
                   {submitting ? (
@@ -495,7 +564,7 @@ export function GrammarFormManager({ initialGrammar }: GrammarFormManagerProps) 
                   <Button
                     type="button"
                     variant="destructive"
-                    disabled={submitting || deleting || !session?.user}
+                    disabled={submitting || deleting || deletingAll || !session?.user}
                     onClick={onDeleteCurrent}
                     className="w-full rounded-xl py-6 text-base md:w-auto"
                   >

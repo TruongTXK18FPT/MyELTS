@@ -11,8 +11,6 @@ type GrammarFormulaTableProps = {
   className?: string;
 };
 
-const defaultLabels = ['Khẳng định', 'Phủ định', 'Nghi vấn', 'Mẫu mở rộng 1', 'Mẫu mở rộng 2'];
-
 function splitFormulaSegments(input: string): string[] {
   return input
     .split(/\||\n+/)
@@ -20,33 +18,116 @@ function splitFormulaSegments(input: string): string[] {
     .filter(Boolean);
 }
 
-function inferFormulaLabel(pattern: string, index: number): string {
-  const normalized = pattern.toLowerCase();
+function normalizeForMatch(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
-  if (normalized.includes('?') || normalized.startsWith('do ') || normalized.startsWith('did ')) {
+function isQuestionPattern(normalized: string): boolean {
+  return (
+    normalized.includes('?') ||
+    /^(do|does|did|am|is|are|was|were|have|has|had|will|would|shall|should|can|could|may|might|must)\b/.test(
+      normalized
+    )
+  );
+}
+
+function isNegativePattern(normalized: string): boolean {
+  return /\bnot\b/.test(normalized) || normalized.includes("n't");
+}
+
+function extractExplicitLabel(segment: string): { label: 'Khẳng định' | 'Phủ định' | 'Nghi vấn' | null; pattern: string } {
+  const separatorIndex = segment.indexOf(':');
+
+  if (separatorIndex <= 0) {
+    return {
+      label: null,
+      pattern: segment.trim(),
+    };
+  }
+
+  const prefix = segment.slice(0, separatorIndex).trim();
+  const content = segment.slice(separatorIndex + 1).trim();
+
+  if (!content) {
+    return {
+      label: null,
+      pattern: segment.trim(),
+    };
+  }
+
+  const normalizedPrefix = normalizeForMatch(prefix);
+
+  if (normalizedPrefix.includes('khang dinh') || normalizedPrefix.includes('affirmative')) {
+    return {
+      label: 'Khẳng định',
+      pattern: content,
+    };
+  }
+
+  if (normalizedPrefix.includes('phu dinh') || normalizedPrefix.includes('negative')) {
+    return {
+      label: 'Phủ định',
+      pattern: content,
+    };
+  }
+
+  if (
+    normalizedPrefix.includes('nghi van') ||
+    normalizedPrefix.includes('interrogative') ||
+    normalizedPrefix.includes('question')
+  ) {
+    return {
+      label: 'Nghi vấn',
+      pattern: content,
+    };
+  }
+
+  return {
+    label: null,
+    pattern: segment.trim(),
+  };
+}
+
+function inferFormulaLabel(pattern: string, index: number, explicitLabel: 'Khẳng định' | 'Phủ định' | 'Nghi vấn' | null): string {
+  if (explicitLabel) {
+    return explicitLabel;
+  }
+
+  const normalized = normalizeForMatch(pattern);
+
+  if (isQuestionPattern(normalized)) {
     return 'Nghi vấn';
   }
 
-  if (normalized.includes(' not ') || normalized.includes("n't")) {
+  if (isNegativePattern(normalized)) {
     return 'Phủ định';
   }
 
-  if (defaultLabels[index]) {
-    return defaultLabels[index];
+  if (index === 0) {
+    return 'Khẳng định';
   }
 
   return `Mẫu ${index + 1}`;
 }
 
-function inferFormulaNote(pattern: string): string {
-  const normalized = pattern.toLowerCase();
+function inferFormulaNote(pattern: string, explicitLabel: 'Khẳng định' | 'Phủ định' | 'Nghi vấn' | null): string {
+  const normalized = normalizeForMatch(pattern);
 
-  if (normalized.includes('?')) {
+  if (explicitLabel === 'Nghi vấn' || isQuestionPattern(normalized)) {
     return 'Dùng để đặt câu hỏi hoặc xác nhận thông tin.';
   }
 
-  if (normalized.includes(' not ') || normalized.includes("n't")) {
+  if (explicitLabel === 'Phủ định' || isNegativePattern(normalized)) {
     return 'Dùng để phủ định ý chính trong câu.';
+  }
+
+  if (explicitLabel === 'Khẳng định') {
+    return 'Dùng để trình bày thông tin ở dạng khẳng định.';
   }
 
   if (normalized.includes('if ')) {
@@ -71,11 +152,15 @@ function parseFormulaRows(structurePattern?: string | null): FormulaRow[] {
 
   const segments = splitFormulaSegments(structurePattern);
 
-  return segments.map((segment, index) => ({
-    label: inferFormulaLabel(segment, index),
-    pattern: segment,
-    note: inferFormulaNote(segment),
-  }));
+  return segments.map((segment, index) => {
+    const parsed = extractExplicitLabel(segment);
+
+    return {
+      label: inferFormulaLabel(parsed.pattern, index, parsed.label),
+      pattern: parsed.pattern,
+      note: inferFormulaNote(parsed.pattern, parsed.label),
+    };
+  });
 }
 
 export function GrammarFormulaTable({ structurePattern, className }: GrammarFormulaTableProps) {

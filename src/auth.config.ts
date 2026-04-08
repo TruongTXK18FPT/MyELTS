@@ -11,12 +11,18 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const onProtected = nextUrl.pathname.startsWith('/profile') || nextUrl.pathname.startsWith('/vocab/upload');
+      const onProtected =
+        nextUrl.pathname.startsWith('/profile') ||
+        nextUrl.pathname.startsWith('/vocab/upload') ||
+        nextUrl.pathname.startsWith('/ai-chat');
       
       if (onProtected) {
         if (isLoggedIn) return true;
         return false; // Redirect to unauthenticated page
-      } else if (isLoggedIn && (nextUrl.pathname.startsWith('/auth/login') || nextUrl.pathname.startsWith('/auth/register'))) {
+      } else if (
+        isLoggedIn &&
+        (nextUrl.pathname.startsWith('/auth/login') || nextUrl.pathname.startsWith('/auth/register'))
+      ) {
         return Response.redirect(new URL('/profile', nextUrl));
       }
       return true;

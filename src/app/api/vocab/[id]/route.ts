@@ -6,7 +6,7 @@ import { buildVocabularyNotes } from '@/lib/vocabulary-seed';
 import { capitalizeVocabularyWord, isVietnameseMeaning } from '@/lib/vocabulary';
 
 type RouteParams = { id: string };
-type RouteContext = { params: Promise<RouteParams> | RouteParams };
+type RouteContext = { params: Promise<RouteParams> };
 
 const nullableLimited = (max: number) => z.string().trim().max(max).nullable().optional();
 
@@ -32,7 +32,7 @@ const updateVocabSchema = z.object({
 });
 
 async function getRouteId(context: RouteContext): Promise<string> {
-  const params = await Promise.resolve(context.params);
+  const params = await context.params;
   return params.id;
 }
 

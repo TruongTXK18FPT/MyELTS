@@ -1,9 +1,9 @@
-import { ChatLayout } from '@/components/aiChat/ChatLayout';
+import { AIChatPage } from '@/components/aiChat/AIChatPage';
 
 export default function AiChatPage() {
   return (
-    <div className="container py-8 md:py-12">
-      <ChatLayout />
+    <div className="ai-chat-shell min-h-screen p-3 md:p-4 lg:p-5">
+      <AIChatPage />
     </div>
   );
 }

@@ -67,7 +67,14 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
       <div className="container flex h-20 items-center justify-between">
         <Link href="/" className="flex items-center gap-3 transition-transform hover:scale-105">
-          <Image src={logoImg} alt="MyELTS Logo" width={48} height={48} className="object-contain drop-shadow-md" />
+          <Image
+            src={logoImg}
+            alt="MyELTS Logo"
+            width={48}
+            height={48}
+            style={{ width: '48px', height: 'auto' }}
+            className="object-contain drop-shadow-md"
+          />
           <span className="font-headline text-3xl font-extrabold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent">
             MyELTS
           </span>
@@ -138,7 +145,14 @@ export function Header() {
               <SheetTitle className="sr-only">Menu Điều Hướng</SheetTitle>
               <div className="flex flex-col gap-8">
                 <Link href="/" className="flex items-center gap-3">
-                    <Image src={logoImg} alt="MyELTS Logo" width={48} height={48} className="object-contain drop-shadow-md" />
+                    <Image
+                      src={logoImg}
+                      alt="MyELTS Logo"
+                      width={48}
+                      height={48}
+                      style={{ width: '48px', height: 'auto' }}
+                      className="object-contain drop-shadow-md"
+                    />
                     <span className="font-headline text-3xl font-extrabold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent">
                         MyELTS
                     </span>

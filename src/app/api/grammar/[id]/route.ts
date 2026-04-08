@@ -2,10 +2,11 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { auth } from '@/auth';
 import { normalizeGrammarTitle, slugifyGrammarTitle, uniqueTags } from '@/lib/grammar';
+import { GRAMMAR_SEED_LOCK_SLUG } from '@/lib/grammar-data';
 import { getGrammarEntryDelegate } from '@/lib/grammar-entry-delegate';
 
 type RouteParams = { id: string };
-type RouteContext = { params: Promise<RouteParams> | RouteParams };
+type RouteContext = { params: Promise<RouteParams> };
 
 const nullableLimited = (max: number) => z.string().trim().max(max).nullable().optional();
 
@@ -23,7 +24,7 @@ const updateGrammarSchema = z.object({
 });
 
 async function getRouteId(context: RouteContext): Promise<string> {
-  const params = await Promise.resolve(context.params);
+  const params = await context.params;
   return params.id;
 }
 
@@ -51,6 +52,9 @@ export async function PUT(req: Request, context: RouteContext) {
       where: {
         id,
         userId: session.user.id,
+        slug: {
+          not: GRAMMAR_SEED_LOCK_SLUG,
+        },
       },
       select: { id: true },
     });
@@ -129,6 +133,9 @@ export async function DELETE(_req: Request, context: RouteContext) {
       where: {
         id,
         userId: session.user.id,
+        slug: {
+          not: GRAMMAR_SEED_LOCK_SLUG,
+        },
       },
     });
 

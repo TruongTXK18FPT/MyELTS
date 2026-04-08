@@ -115,44 +115,44 @@ export default function MusicPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50/80 via-white to-rose-50/50">
       {/* Hero Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-pink-400 via-rose-400 to-pink-500 pb-16 pt-12">
+      <div className="relative overflow-hidden bg-gradient-to-br from-pink-400 via-rose-400 to-pink-500 pb-12 pt-8 sm:pb-16 sm:pt-12">
         {/* Decorative blobs */}
         <div className="absolute -left-20 -top-20 h-60 w-60 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -right-10 top-10 h-40 w-40 rounded-full bg-pink-300/20 blur-2xl" />
         <div className="absolute bottom-0 left-1/3 h-32 w-32 rounded-full bg-rose-300/20 blur-2xl" />
 
         {/* Floating music notes */}
-        <div className="absolute left-[10%] top-[30%] animate-bounce text-white/20" style={{ animationDelay: '0s', animationDuration: '3s' }}>
+        <div className="absolute left-[10%] top-[30%] animate-bounce text-white/20 hidden sm:block" style={{ animationDelay: '0s', animationDuration: '3s' }}>
           <Music2 className="h-8 w-8" />
         </div>
-        <div className="absolute right-[15%] top-[20%] animate-bounce text-white/15" style={{ animationDelay: '1s', animationDuration: '4s' }}>
+        <div className="absolute right-[15%] top-[20%] animate-bounce text-white/15 hidden sm:block" style={{ animationDelay: '1s', animationDuration: '4s' }}>
           <Headphones className="h-10 w-10" />
         </div>
-        <div className="absolute left-[60%] top-[60%] animate-bounce text-white/20" style={{ animationDelay: '0.5s', animationDuration: '3.5s' }}>
+        <div className="absolute left-[60%] top-[60%] animate-bounce text-white/20 hidden sm:block" style={{ animationDelay: '0.5s', animationDuration: '3.5s' }}>
           <Disc3 className="h-6 w-6 animate-spin" style={{ animationDuration: '4s' }} />
         </div>
 
-        <div className="container relative">
+        <div className="container relative px-4">
           <div className="flex flex-col items-center text-center">
-            <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-white/20 shadow-xl backdrop-blur-sm">
-              <Radio className="h-10 w-10 text-white" />
+            <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 shadow-xl backdrop-blur-sm sm:mb-4 sm:h-20 sm:w-20 sm:rounded-3xl">
+              <Radio className="h-7 w-7 text-white sm:h-10 sm:w-10" />
             </div>
-            <h1 className="mb-2 text-4xl font-extrabold text-white md:text-5xl">
+            <h1 className="mb-2 text-2xl font-extrabold text-white sm:text-4xl md:text-5xl">
               🎵 Trạm Phát Nhạc
             </h1>
-            <p className="max-w-md text-base text-pink-100">
+            <p className="max-w-md text-xs text-pink-100 sm:text-base">
               Chia sẻ và thưởng thức nhạc cùng nhau trên MyELTS 🎧✨
             </p>
 
             {/* Stats */}
-            <div className="mt-6 flex items-center gap-6">
-              <div className="rounded-2xl bg-white/15 px-4 py-2 backdrop-blur-sm">
-                <p className="text-2xl font-bold text-white">{tracks.length}</p>
-                <p className="text-[11px] text-pink-100">Bài nhạc</p>
+            <div className="mt-4 flex items-center gap-4 sm:mt-6 sm:gap-6">
+              <div className="rounded-xl bg-white/15 px-3 py-1.5 backdrop-blur-sm sm:rounded-2xl sm:px-4 sm:py-2">
+                <p className="text-lg font-bold text-white sm:text-2xl">{tracks.length}</p>
+                <p className="text-[9px] text-pink-100 sm:text-[11px]">Bài nhạc</p>
               </div>
-              <div className="rounded-2xl bg-white/15 px-4 py-2 backdrop-blur-sm">
-                <p className="text-2xl font-bold text-white">{playlists.length}</p>
-                <p className="text-[11px] text-pink-100">Playlist</p>
+              <div className="rounded-xl bg-white/15 px-3 py-1.5 backdrop-blur-sm sm:rounded-2xl sm:px-4 sm:py-2">
+                <p className="text-lg font-bold text-white sm:text-2xl">{playlists.length}</p>
+                <p className="text-[9px] text-pink-100 sm:text-[11px]">Playlist</p>
               </div>
             </div>
           </div>
@@ -172,30 +172,30 @@ export default function MusicPage() {
         </svg>
       </div>
 
-      <div className="container -mt-8">
+      <div className="container -mt-4 px-3 sm:-mt-8 sm:px-4 md:px-6">
         {/* Add Track Form */}
         {session?.user && (
-          <div className="mx-auto mb-8 max-w-xl">
+          <div className="mx-auto mb-6 max-w-xl sm:mb-8">
             <AddTrackForm onTrackAdded={fetchTracks} />
           </div>
         )}
 
         {/* Main Content */}
-        <Tabs defaultValue="tracks" className="mt-6">
-          <div className="mb-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <TabsList className="rounded-2xl border border-pink-200 bg-white p-1 shadow-sm">
+        <Tabs defaultValue="tracks" className="mt-4 sm:mt-6">
+          <div className="mb-4 flex flex-col items-stretch gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <TabsList className="w-full rounded-2xl border border-pink-200 bg-white p-1 shadow-sm sm:w-auto">
               <TabsTrigger
                 value="tracks"
-                className="rounded-xl px-5 text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-400 data-[state=active]:to-rose-400 data-[state=active]:text-white"
+                className="flex-1 rounded-xl px-3 text-xs sm:flex-none sm:px-5 sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-400 data-[state=active]:to-rose-400 data-[state=active]:text-white"
               >
-                <Music2 className="mr-2 h-4 w-4" />
+                <Music2 className="mr-1.5 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
                 Tất cả nhạc
               </TabsTrigger>
               <TabsTrigger
                 value="playlists"
-                className="rounded-xl px-5 text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-400 data-[state=active]:to-rose-400 data-[state=active]:text-white"
+                className="flex-1 rounded-xl px-3 text-xs sm:flex-none sm:px-5 sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-400 data-[state=active]:to-rose-400 data-[state=active]:text-white"
               >
-                <ListMusic className="mr-2 h-4 w-4" />
+                <ListMusic className="mr-1.5 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
                 Playlist
               </TabsTrigger>
             </TabsList>
@@ -216,38 +216,38 @@ export default function MusicPage() {
           {/* Tracks Tab */}
           <TabsContent value="tracks">
             {/* Platform Filter */}
-            <div className="mb-5 flex items-center gap-2">
+            <div className="mb-4 flex flex-wrap items-center gap-2 sm:mb-5">
               <button
                 onClick={() => setFilter('ALL')}
-                className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-all ${
+                className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-[10px] font-semibold transition-all sm:gap-1.5 sm:px-4 sm:py-2 sm:text-xs ${
                   filter === 'ALL'
                     ? 'bg-gradient-to-r from-pink-400 to-rose-400 text-white shadow-md shadow-pink-200'
                     : 'bg-white text-gray-500 border border-pink-100 hover:border-pink-300 hover:text-pink-500'
                 }`}
               >
-                <Sparkles className="h-3.5 w-3.5" />
+                <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                 Tất cả
               </button>
               <button
                 onClick={() => setFilter('YOUTUBE')}
-                className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-all ${
+                className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-[10px] font-semibold transition-all sm:gap-1.5 sm:px-4 sm:py-2 sm:text-xs ${
                   filter === 'YOUTUBE'
                     ? 'bg-red-500 text-white shadow-md shadow-red-200'
                     : 'bg-white text-gray-500 border border-pink-100 hover:border-red-300 hover:text-red-500'
                 }`}
               >
-                <Youtube className="h-3.5 w-3.5" />
+                <Youtube className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                 YouTube
               </button>
               <button
                 onClick={() => setFilter('SPOTIFY')}
-                className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-all ${
+                className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-[10px] font-semibold transition-all sm:gap-1.5 sm:px-4 sm:py-2 sm:text-xs ${
                   filter === 'SPOTIFY'
                     ? 'bg-green-500 text-white shadow-md shadow-green-200'
                     : 'bg-white text-gray-500 border border-pink-100 hover:border-green-300 hover:text-green-500'
                 }`}
               >
-                <Music className="h-3.5 w-3.5" />
+                <Music className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                 Spotify
               </button>
 
@@ -255,9 +255,9 @@ export default function MusicPage() {
                 <Button
                   onClick={handlePlayAll}
                   size="sm"
-                  className="ml-auto h-8 rounded-full bg-gradient-to-r from-pink-400 to-rose-400 text-xs font-semibold text-white shadow-sm hover:from-pink-500 hover:to-rose-500"
+                  className="ml-auto h-7 rounded-full bg-gradient-to-r from-pink-400 to-rose-400 px-3 text-[10px] font-semibold text-white shadow-sm hover:from-pink-500 hover:to-rose-500 sm:h-8 sm:px-4 sm:text-xs"
                 >
-                  <Play className="mr-1 h-3.5 w-3.5" fill="white" />
+                  <Play className="mr-1 h-3 w-3 sm:h-3.5 sm:w-3.5" fill="white" />
                   Phát tất cả ({tracks.length})
                 </Button>
               )}
@@ -274,7 +274,7 @@ export default function MusicPage() {
           {/* Playlists Tab */}
           <TabsContent value="playlists">
             {loadingPlaylists ? (
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
                 {Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="animate-pulse overflow-hidden rounded-2xl border border-pink-100 bg-white">
                     <div className="aspect-[2/1] w-full bg-pink-100" />
@@ -286,15 +286,15 @@ export default function MusicPage() {
                 ))}
               </div>
             ) : playlists.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-pink-200 bg-pink-50/50 py-16">
-                <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-rose-200">
-                  <ListMusic className="h-10 w-10 text-pink-400" />
+              <div className="flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-pink-200 bg-pink-50/50 py-12 sm:py-16">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-rose-200 sm:h-20 sm:w-20">
+                  <ListMusic className="h-8 w-8 text-pink-400 sm:h-10 sm:w-10" />
                 </div>
-                <h3 className="mb-1 text-lg font-bold text-pink-600">Chưa có playlist nào</h3>
-                <p className="text-sm text-pink-400">Tạo playlist đầu tiên để tổ chức nhạc yêu thích! 🎶</p>
+                <h3 className="mb-1 text-base font-bold text-pink-600 sm:text-lg">Chưa có playlist nào</h3>
+                <p className="text-xs text-pink-400 sm:text-sm">Tạo playlist đầu tiên để tổ chức nhạc yêu thích! 🎶</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
                 {playlists.map((playlist) => (
                   <PlaylistCard
                     key={playlist.id}
@@ -309,8 +309,8 @@ export default function MusicPage() {
         </Tabs>
       </div>
 
-      {/* Bottom spacing for robot widget */}
-      <div className="h-24" />
+      {/* Bottom spacing for music player on mobile */}
+      <div className="h-32 sm:h-24" />
     </div>
   );
 }

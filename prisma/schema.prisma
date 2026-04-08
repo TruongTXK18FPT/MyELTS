@@ -7,6 +7,31 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum TutorType {
+  WRITING_TASK1
+  WRITING_TASK2
+  LISTENING
+  SPEAKING
+  READING_ACADEMIC
+  READING_GENERAL
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum MessageContentType {
+  TEXT
+  AUDIO
+  IMAGE
+  ESSAY_EVALUATION
+  LISTENING_EXERCISE
+  READING_PASSAGE
+  SPEAKING_FEEDBACK
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -24,6 +49,39 @@ model User {
   grammarStudyProgresses GrammarStudyProgress[]
   playlists     Playlist[]
   musicTracks   MusicTrack[]
+  chatSessions  ChatSession[]
+}
+
+model ChatSession {
+  id          String     @id @default(cuid())
+  title       String?
+  tutorType   TutorType
+  userId      String
+  isArchived  Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages ChatMessage[]
+
+  @@index([userId, tutorType])
+  @@index([userId, updatedAt])
+}
+
+model ChatMessage {
+  id            String             @id @default(cuid())
+  sessionId     String
+  role          MessageRole
+  content       String             @db.Text
+  contentType   MessageContentType @default(TEXT)
+  metadata      Json?
+  audioUrl      String?
+  imageUrl      String?
+  createdAt     DateTime           @default(now())
+
+  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
 }
 
 enum MusicPlatform {

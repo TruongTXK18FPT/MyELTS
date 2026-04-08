@@ -3,6 +3,11 @@ import { slugifyGrammarTitle } from '@/lib/grammar';
 import type { GrammarItem } from '@/components/grammar/types';
 import { getGrammarEntryDelegate } from '@/lib/grammar-entry-delegate';
 
+export const GRAMMAR_SEED_LOCK_SLUG = '__grammar-seed-lock__';
+
+const GRAMMAR_SEED_LOCK_TITLE = 'Grammar Seed Lock';
+const GRAMMAR_SEED_LOCK_EXPLANATION = 'Internal marker to keep one-time grammar seed initialization stable.';
+
 type SeedRow = {
   userId: string;
   title: string;
@@ -118,24 +123,43 @@ export async function seedGrammarForUser(userId: string): Promise<void> {
     return;
   }
 
-  const seedRows = buildSeedRows(userId);
-  const existingRows = await grammarEntry.findMany<{ slug: string; isSeed: boolean }>({
+  const existingRows = await grammarEntry.findMany<{ slug: string }>({
     where: { userId },
     select: {
       slug: true,
-      isSeed: true,
     },
   });
 
-  const existingBySlug = new Map(existingRows.map((row) => [row.slug, row]));
-  const missingRows = seedRows.filter((row) => !existingBySlug.has(row.slug));
+  const hasSeedLock = existingRows.some((row) => row.slug === GRAMMAR_SEED_LOCK_SLUG);
 
-  if (missingRows.length > 0) {
-    await grammarEntry.createMany({
-      data: missingRows,
-    });
+  if (hasSeedLock) {
+    return;
   }
 
+  if (existingRows.length === 0) {
+    const seedRows = buildSeedRows(userId);
+
+    if (seedRows.length > 0) {
+      await grammarEntry.createMany({
+        data: seedRows,
+      });
+    }
+  }
+
+  try {
+    await grammarEntry.create({
+      data: {
+        userId,
+        title: GRAMMAR_SEED_LOCK_TITLE,
+        slug: GRAMMAR_SEED_LOCK_SLUG,
+        explanation: GRAMMAR_SEED_LOCK_EXPLANATION,
+        tags: ['system'],
+        isSeed: false,
+      },
+    });
+  } catch {
+    // Ignore duplicate lock creation in concurrent requests.
+  }
 }
 
 export async function getGrammarForUser(userId: string): Promise<GrammarItem[]> {
@@ -146,7 +170,12 @@ export async function getGrammarForUser(userId: string): Promise<GrammarItem[]> 
   }
 
   const rows = await grammarEntry.findMany({
-    where: { userId },
+    where: {
+      userId,
+      slug: {
+        not: GRAMMAR_SEED_LOCK_SLUG,
+      },
+    },
     orderBy: { createdAt: 'desc' },
   });
 

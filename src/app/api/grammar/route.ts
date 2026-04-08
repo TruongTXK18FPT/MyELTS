@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { auth } from '@/auth';
 import { normalizeGrammarTitle, slugifyGrammarTitle, uniqueTags } from '@/lib/grammar';
+import { GRAMMAR_SEED_LOCK_SLUG } from '@/lib/grammar-data';
 import { getGrammarEntryDelegate } from '@/lib/grammar-entry-delegate';
 
 const nullableLimited = (max: number) => z.string().trim().max(max).nullable().optional();
@@ -30,6 +31,10 @@ export async function POST(req: Request) {
     const payload = createGrammarSchema.parse(await req.json());
     const title = normalizeGrammarTitle(payload.title);
     const slug = slugifyGrammarTitle(title);
+
+    if (slug === GRAMMAR_SEED_LOCK_SLUG) {
+      return NextResponse.json({ error: 'Tên chủ điểm này đang được hệ thống bảo lưu. Vui lòng chọn tên khác.' }, { status: 400 });
+    }
 
     const grammarEntry = getGrammarEntryDelegate();
 
@@ -80,5 +85,38 @@ export async function POST(req: Request) {
 
     console.error(error);
     return NextResponse.json({ error: 'Không thể tạo điểm ngữ pháp.' }, { status: 500 });
+  }
+}
+
+export async function DELETE() {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Bạn cần đăng nhập.' }, { status: 401 });
+    }
+
+    const grammarEntry = getGrammarEntryDelegate();
+
+    if (!grammarEntry) {
+      return NextResponse.json(
+        { error: 'Dữ liệu ngữ pháp chưa sẵn sàng. Vui lòng khởi động lại server hoặc chạy lại prisma generate.' },
+        { status: 503 }
+      );
+    }
+
+    const deleted = await grammarEntry.deleteMany({
+      where: {
+        userId: session.user.id,
+        slug: {
+          not: GRAMMAR_SEED_LOCK_SLUG,
+        },
+      },
+    });
+
+    return NextResponse.json({ success: true, deletedCount: deleted.count });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: 'Không thể xóa toàn bộ điểm ngữ pháp.' }, { status: 500 });
   }
 }
