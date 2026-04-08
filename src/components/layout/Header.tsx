@@ -15,18 +15,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Menu, LogOut, UserCircle2, Map, Home, BookOpen, PenTool, MessageSquare, LayoutDashboard, Music } from 'lucide-react';
+import { Menu, LogOut, UserCircle2, Map, Home, BookOpen, PenTool, MessageSquare, LayoutDashboard, BookText,Headphones } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Import icons for header
 import logoImg from '@/assets/logo.png';
 
 const navLinks = [
-  { href: '/', label: 'Home', isLucide: true, LucideIcon: Home },
+  { href: '/music', label: 'Music', isLucide: true, LucideIcon: Headphones },
   { href: '/vocabulary', label: 'Vocabulary', isLucide: true, LucideIcon: BookOpen },
+  { href: '/grammar', label: 'Grammar', isLucide: true, LucideIcon: BookText },
   { href: '/tests', label: 'Tests', isLucide: true, LucideIcon: PenTool },
   { href: '/ai-chat', label: 'AI Chat', isLucide: true, LucideIcon: MessageSquare },
-  { href: '/music', label: 'Music', isLucide: true, LucideIcon: Music },
   { href: '/roadmap', label: 'Roadmap', isLucide: true, LucideIcon: Map },
   { href: '/dashboard', label: 'Dashboard', isLucide: true, LucideIcon: LayoutDashboard },
 ];
