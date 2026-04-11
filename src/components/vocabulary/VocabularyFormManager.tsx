@@ -22,8 +22,22 @@ import { ChipFilter } from '@/components/ui/ChipFilter';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  deriveVocabularyFamilyKey,
+  extractVocabularyFamilyMeta,
+  type VocabularyFamilyMember,
+  upsertVocabularyFamilyMeta,
+} from '@/lib/vocabulary-family';
 import { buildVocabularyNotes } from '@/lib/vocabulary-seed';
-import { capitalizeVocabularyWord, normalizeVocabularyWord } from '@/lib/vocabulary';
+import {
+  capitalizeVocabularyWord,
+  findExistingVocabularyCategory,
+  getVocabularyCategoryStats,
+  normalizeVocabularyCategory,
+  normalizeVocabularyCategoryKey,
+  normalizeVocabularyWord,
+  resolveVocabularyCategory,
+} from '@/lib/vocabulary';
 import { VocabularyItem } from './VocabularyList';
 
 type VocabularyFormManagerProps = {
@@ -49,6 +63,7 @@ type VocabularyFormState = {
 };
 
 type AIVocabularyDraft = Omit<VocabularyFormState, 'imageUrl'>;
+type AIWordFamilyDraft = AIVocabularyDraft & { relation: string };
 
 type StatusState = {
   type: 'success' | 'error';
@@ -57,6 +72,7 @@ type StatusState = {
 
 type AIMode = 'enrich' | 'generate-topic' | 'save-generated' | null;
 type QuickGrammarFilter = 'noun' | 'verb' | 'adjective' | 'adverb' | 'phrasal verb' | 'collocation' | 'idiom';
+type TopicMode = 'existing' | 'new';
 
 const initialFormState: VocabularyFormState = {
   word: '',
@@ -238,6 +254,72 @@ function sanitizeAIDraft(input: Partial<AIVocabularyDraft>): AIVocabularyDraft {
   };
 }
 
+function sanitizeAIWordFamilyDraft(input: Partial<AIWordFamilyDraft>): AIWordFamilyDraft {
+  return {
+    ...sanitizeAIDraft(input),
+    relation: input.relation?.trim() || '',
+  };
+}
+
+function mapDraftToFamilyMember(draft: AIVocabularyDraft, relation?: string): VocabularyFamilyMember {
+  return {
+    word: capitalizeVocabularyWord(draft.word),
+    grammar: draft.grammar.trim(),
+    relation: relation?.trim() || draft.grammar.trim(),
+    meaning: draft.meaning.trim(),
+    example: draft.example.trim(),
+    usageContext: draft.usageContext.trim(),
+    note: draft.note.trim(),
+  };
+}
+
+function mergeWordFamilyDrafts(primary: AIVocabularyDraft, related: AIWordFamilyDraft[]): AIWordFamilyDraft[] {
+  const merged = new Map<string, AIWordFamilyDraft>();
+
+  const pushDraft = (draft: AIWordFamilyDraft) => {
+    const key = normalizeVocabularyWord(draft.word);
+
+    if (!key) {
+      return;
+    }
+
+    if (!merged.has(key)) {
+      merged.set(key, draft);
+      return;
+    }
+
+    const existing = merged.get(key)!;
+    merged.set(key, {
+      ...existing,
+      pronunciation: existing.pronunciation || draft.pronunciation,
+      grammar: existing.grammar || draft.grammar,
+      relation: existing.relation || draft.relation,
+      category: existing.category || draft.category,
+      meaning: existing.meaning || draft.meaning,
+      example: existing.example || draft.example,
+      usageContext: existing.usageContext || draft.usageContext,
+      note: existing.note || draft.note,
+      synonym: existing.synonym || draft.synonym,
+      antonym: existing.antonym || draft.antonym,
+      singularForm: existing.singularForm || draft.singularForm,
+      pluralForm: existing.pluralForm || draft.pluralForm,
+      v2Form: existing.v2Form || draft.v2Form,
+      v3Form: existing.v3Form || draft.v3Form,
+    });
+  };
+
+  pushDraft({
+    ...sanitizeAIDraft(primary),
+    relation: 'core',
+  });
+
+  for (const entry of related) {
+    pushDraft(sanitizeAIWordFamilyDraft(entry));
+  }
+
+  return [...merged.values()];
+}
+
 function mapItemFromApi(created: any): VocabularyItem {
   return {
     id: created.id,
@@ -266,6 +348,7 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const selectedIdFromQuery = searchParams.get('id');
+  const initialTopics = getVocabularyCategoryStats(initialVocabulary).map((entry) => entry.category);
 
   const { data: session } = useSession();
 
@@ -282,12 +365,26 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
   const [aiMode, setAiMode] = useState<AIMode>(null);
 
   const [lookupInput, setLookupInput] = useState('');
-  const [topicInput, setTopicInput] = useState('');
+  const [manualTopicMode, setManualTopicMode] = useState<TopicMode>(initialTopics.length > 0 ? 'existing' : 'new');
+  const [manualSelectedTopic, setManualSelectedTopic] = useState(initialTopics[0] || '');
+  const [manualNewTopic, setManualNewTopic] = useState('');
+
+  const [aiTopicMode, setAiTopicMode] = useState<TopicMode>(initialTopics.length > 0 ? 'existing' : 'new');
+  const [aiSelectedTopic, setAiSelectedTopic] = useState(initialTopics[0] || '');
+  const [aiNewTopic, setAiNewTopic] = useState('');
+
   const [topicCount, setTopicCount] = useState(8);
   const [quickGrammarFilters, setQuickGrammarFilters] = useState<QuickGrammarFilter[]>([]);
   const [generatedVocabulary, setGeneratedVocabulary] = useState<AIVocabularyDraft[]>([]);
+  const [wordFamilyDrafts, setWordFamilyDrafts] = useState<AIWordFamilyDraft[]>([]);
+  const [wordFamilyKey, setWordFamilyKey] = useState('');
+  const [savingWordFamily, setSavingWordFamily] = useState(false);
+  const [deletingTopic, setDeletingTopic] = useState<string | null>(null);
 
   const [status, setStatus] = useState<StatusState | null>(null);
+
+  const topicStats = useMemo(() => getVocabularyCategoryStats(vocabulary), [vocabulary]);
+  const topicOptions = useMemo(() => topicStats.map((entry) => entry.category), [topicStats]);
 
   const visibleVocabulary = useMemo(() => {
     const q = manageSearch.trim().toLowerCase();
@@ -317,12 +414,68 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
     [editingId, vocabulary]
   );
 
+  const syncManualTopicControls = (rawCategory?: string | null) => {
+    const normalizedCategory = normalizeVocabularyCategory(rawCategory);
+    const matchedExistingTopic = findExistingVocabularyCategory(normalizedCategory, topicOptions);
+
+    if (matchedExistingTopic) {
+      setManualTopicMode('existing');
+      setManualSelectedTopic(matchedExistingTopic);
+      setManualNewTopic('');
+      return;
+    }
+
+    if (!normalizedCategory && topicOptions.length > 0) {
+      setManualTopicMode('existing');
+      setManualSelectedTopic(topicOptions[0]);
+      setManualNewTopic('');
+      return;
+    }
+
+    setManualTopicMode('new');
+    setManualNewTopic(normalizedCategory);
+  };
+
+  const getResolvedManualCategory = (): string | null => {
+    if (manualTopicMode === 'existing') {
+      return resolveVocabularyCategory(manualSelectedTopic, topicOptions);
+    }
+
+    return resolveVocabularyCategory(manualNewTopic || form.category, topicOptions);
+  };
+
+  const getResolvedAITopic = (): string => {
+    const topicCandidate = aiTopicMode === 'existing' ? aiSelectedTopic : aiNewTopic;
+    return normalizeVocabularyCategory(topicCandidate);
+  };
+
+  useEffect(() => {
+    if (topicOptions.length === 0) {
+      setManualTopicMode('new');
+      setManualSelectedTopic('');
+      setAiTopicMode('new');
+      setAiSelectedTopic('');
+      return;
+    }
+
+    setManualSelectedTopic((prev) => findExistingVocabularyCategory(prev, topicOptions) || topicOptions[0]);
+    setAiSelectedTopic((prev) => findExistingVocabularyCategory(prev, topicOptions) || topicOptions[0]);
+  }, [topicOptions]);
+
   useEffect(() => {
     if (!selectedIdFromQuery) {
+      const defaultTopic = topicOptions[0] || '';
+
       setEditingId(null);
-      setForm(initialFormState);
+      setForm({
+        ...initialFormState,
+        category: defaultTopic,
+      });
+      syncManualTopicControls(defaultTopic);
       setImageFile(null);
       setImagePreview(null);
+      setWordFamilyDrafts([]);
+      setWordFamilyKey('');
       return;
     }
 
@@ -335,9 +488,37 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
 
     setEditingId(item.id);
     setForm(toFormState(item));
+    syncManualTopicControls(item.category);
     setImageFile(null);
     setImagePreview(item.image || null);
-  }, [selectedIdFromQuery, vocabulary]);
+
+    const familyExtracted = extractVocabularyFamilyMeta(item.notes);
+
+    if (familyExtracted.meta) {
+      const selectedKey = normalizeVocabularyWord(item.word);
+      const relatedDrafts = familyExtracted.meta.members
+        .filter((member) => normalizeVocabularyWord(member.word) !== selectedKey)
+        .map((member) =>
+          sanitizeAIWordFamilyDraft({
+            word: member.word,
+            grammar: member.grammar,
+            relation: member.relation,
+            meaning: member.meaning,
+            example: member.example,
+            usageContext: member.usageContext,
+            note: member.note,
+            category: item.category || '',
+          })
+        )
+        .filter((member) => member.word);
+
+      setWordFamilyDrafts(relatedDrafts);
+      setWordFamilyKey(familyExtracted.meta.familyKey || deriveVocabularyFamilyKey(item.word));
+    } else {
+      setWordFamilyDrafts([]);
+      setWordFamilyKey('');
+    }
+  }, [selectedIdFromQuery, topicOptions, vocabulary]);
 
   const setQueryId = (id: string | null) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -353,10 +534,18 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
   };
 
   const resetFormForNew = () => {
+    const defaultTopic = topicOptions[0] || '';
+
     setEditingId(null);
-    setForm(initialFormState);
+    setForm({
+      ...initialFormState,
+      category: defaultTopic,
+    });
+    syncManualTopicControls(defaultTopic);
     setImageFile(null);
     setImagePreview(null);
+    setWordFamilyDrafts([]);
+    setWordFamilyKey('');
     setStatus(null);
     setQueryId(null);
   };
@@ -385,12 +574,14 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
   };
 
   const applyDraftToForm = (draft: AIVocabularyDraft) => {
+    const normalizedCategory = normalizeVocabularyCategory(draft.category);
+
     setForm((prev) => ({
       ...prev,
       word: draft.word,
       pronunciation: draft.pronunciation,
       grammar: draft.grammar,
-      category: draft.category,
+      category: normalizedCategory,
       meaning: draft.meaning,
       example: draft.example,
       usageContext: draft.usageContext,
@@ -402,6 +593,44 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
       v2Form: draft.v2Form,
       v3Form: draft.v3Form,
     }));
+
+    syncManualTopicControls(normalizedCategory);
+  };
+
+  const onManualTopicModeChange = (mode: TopicMode) => {
+    setManualTopicMode(mode);
+
+    if (mode === 'existing') {
+      const selectedTopic = findExistingVocabularyCategory(manualSelectedTopic, topicOptions) || topicOptions[0] || '';
+      setManualSelectedTopic(selectedTopic);
+      onFieldChange('category', selectedTopic);
+      return;
+    }
+
+    onFieldChange('category', manualNewTopic);
+  };
+
+  const onManualExistingTopicChange = (value: string) => {
+    const resolved = findExistingVocabularyCategory(value, topicOptions) || value;
+    setManualSelectedTopic(resolved);
+    onFieldChange('category', resolved);
+  };
+
+  const onManualNewTopicChange = (value: string) => {
+    setManualNewTopic(value);
+    onFieldChange('category', value);
+  };
+
+  const onAITopicModeChange = (mode: TopicMode) => {
+    setAiTopicMode(mode);
+
+    if (mode === 'existing') {
+      const selectedTopic = findExistingVocabularyCategory(aiSelectedTopic, topicOptions) || topicOptions[0] || '';
+      setAiSelectedTopic(selectedTopic);
+      return;
+    }
+
+    setAiNewTopic('');
   };
 
   const onAIAutofill = async () => {
@@ -442,8 +671,35 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
         throw new Error('AI chưa trả về từ vựng hợp lệ, vui lòng thử lại.');
       }
 
+      const familyDrafts = Array.isArray(payload?.wordFamily)
+        ? payload.wordFamily
+            .map((entry: Partial<AIWordFamilyDraft>) => sanitizeAIWordFamilyDraft(entry))
+            .filter((entry: AIWordFamilyDraft) => {
+              if (!entry.word) {
+                return false;
+              }
+
+              return normalizeVocabularyWord(entry.word) !== normalizeVocabularyWord(draft.word);
+            })
+        : [];
+
+      const dedupedFamilyDrafts = mergeWordFamilyDrafts(draft, familyDrafts).filter(
+        (entry) => normalizeVocabularyWord(entry.word) !== normalizeVocabularyWord(draft.word)
+      );
+
+      const aiFamilyKey =
+        typeof payload?.familyKey === 'string' && payload.familyKey.trim()
+          ? payload.familyKey.trim()
+          : deriveVocabularyFamilyKey(draft.word);
+
+      setWordFamilyDrafts(dedupedFamilyDrafts);
+      setWordFamilyKey(aiFamilyKey);
+
       applyDraftToForm(draft);
-      setStatus({ type: 'success', message: `AI đã điền tự động thông tin cho từ "${draft.word}".` });
+      setStatus({
+        type: 'success',
+        message: `AI đã điền từ "${draft.word}" cùng ${dedupedFamilyDrafts.length} biến thể liên quan chuẩn IELTS.`,
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Đã xảy ra lỗi không xác định.';
       setStatus({ type: 'error', message });
@@ -464,7 +720,9 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
       return;
     }
 
-    if (!topicInput.trim()) {
+    const selectedTopic = getResolvedAITopic();
+
+    if (!selectedTopic) {
       setStatus({ type: 'error', message: 'Nhập một chủ đề để AI tạo danh sách từ vựng.' });
       return;
     }
@@ -480,7 +738,7 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
         },
         body: JSON.stringify({
           action: 'generate-from-topic',
-          topic: topicInput.trim(),
+          topic: selectedTopic,
           count: topicCount,
           grammarFilters: quickGrammarFilters,
         }),
@@ -498,13 +756,28 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
             .filter((item: AIVocabularyDraft) => item.word)
         : [];
 
-      const detailedItems = items.filter((item: AIVocabularyDraft) => hasDetailedQuickDraft(item));
+      const resolvedTopic = normalizeVocabularyCategory(payload?.topic || selectedTopic);
+
+      const detailedItems = items
+        .map((item: AIVocabularyDraft) => ({
+          ...item,
+          category: resolvedTopic || item.category,
+        }))
+        .filter((item: AIVocabularyDraft) => hasDetailedQuickDraft(item));
 
       if (detailedItems.length === 0) {
         throw new Error('AI chưa tạo được danh sách đủ chi tiết, vui lòng thử lại với chủ đề cụ thể hơn.');
       }
 
       setGeneratedVocabulary(detailedItems);
+
+      if (resolvedTopic) {
+        if (aiTopicMode === 'existing') {
+          setAiSelectedTopic(resolvedTopic);
+        } else {
+          setAiNewTopic(resolvedTopic);
+        }
+      }
 
       const selectedGrammarLabels =
         quickGrammarFilters.length === 0
@@ -516,7 +789,7 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
       const warningSuffix = payload?.warning ? ` ${payload.warning}` : '';
       setStatus({
         type: 'success',
-        message: `AI đã tạo ${detailedItems.length} từ vựng theo chủ đề "${topicInput.trim()}" (${selectedGrammarLabels}).${warningSuffix}`,
+        message: `AI đã tạo ${detailedItems.length} từ vựng theo chủ đề "${resolvedTopic || selectedTopic}" (${selectedGrammarLabels}).${warningSuffix}`,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Đã xảy ra lỗi không xác định.';
@@ -526,12 +799,66 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
     }
   };
 
+  const getPrimaryDraftFromForm = (): AIVocabularyDraft => ({
+    word: capitalizeVocabularyWord(form.word),
+    pronunciation: form.pronunciation,
+    grammar: form.grammar,
+    category: getResolvedManualCategory() || form.category,
+    meaning: form.meaning,
+    example: form.example,
+    usageContext: form.usageContext,
+    note: form.note,
+    synonym: form.synonym,
+    antonym: form.antonym,
+    singularForm: form.singularForm,
+    pluralForm: form.pluralForm,
+    v2Form: form.v2Form,
+    v3Form: form.v3Form,
+  });
+
+  const buildFamilyMetaFromCurrentState = () => {
+    if (wordFamilyDrafts.length === 0) {
+      return null;
+    }
+
+    const primaryDraft = getPrimaryDraftFromForm();
+    const mergedFamily = mergeWordFamilyDrafts(primaryDraft, wordFamilyDrafts);
+
+    if (mergedFamily.length < 2) {
+      return null;
+    }
+
+    const familyKey = wordFamilyKey || deriveVocabularyFamilyKey(primaryDraft.word);
+
+    return {
+      familyKey,
+      members: mergedFamily.map((entry) => mapDraftToFamilyMember(entry, entry.relation || entry.grammar)),
+    };
+  };
+
   const buildPayload = (imageUrl: string | null) => {
+    const resolvedCategory = getResolvedManualCategory();
+    const baseNotes =
+      buildVocabularyNotes({
+        meaning: form.meaning,
+        example: form.example,
+        usageContext: form.usageContext,
+        note: form.note,
+        synonym: form.synonym,
+        antonym: form.antonym,
+        singularForm: form.singularForm,
+        pluralForm: form.pluralForm,
+        v2Form: form.v2Form,
+        v3Form: form.v3Form,
+      }) || null;
+    const familyMeta = buildFamilyMetaFromCurrentState();
+    const notesWithFamily = upsertVocabularyFamilyMeta(baseNotes, familyMeta);
+
     return {
       word: capitalizeVocabularyWord(form.word),
       pronunciation: form.pronunciation.trim() || null,
       grammar: form.grammar.trim() || null,
-      category: form.category.trim() || null,
+      category: resolvedCategory,
       meaning: form.meaning.trim() || null,
       example: form.example.trim() || null,
       usageContext: form.usageContext.trim() || null,
@@ -543,19 +870,7 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
       v2Form: form.v2Form.trim() || null,
       v3Form: form.v3Form.trim() || null,
       image: imageUrl,
-      notes:
-        buildVocabularyNotes({
-          meaning: form.meaning,
-          example: form.example,
-          usageContext: form.usageContext,
-          note: form.note,
-          synonym: form.synonym,
-          antonym: form.antonym,
-          singularForm: form.singularForm,
-          pluralForm: form.pluralForm,
-          v2Form: form.v2Form,
-          v3Form: form.v3Form,
-        }) || null,
+      notes: notesWithFamily,
     };
   };
 
@@ -626,6 +941,7 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
 
       setEditingId(savedItem.id);
       setForm(toFormState(savedItem));
+      syncManualTopicControls(savedItem.category);
       setImageFile(null);
       setImagePreview(savedItem.image || null);
       setQueryId(savedItem.id);
@@ -669,6 +985,189 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
       setStatus({ type: 'error', message });
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const onDeleteTopic = async (topic: string) => {
+    if (!session?.user) {
+      setStatus({ type: 'error', message: 'Vui lòng đăng nhập để xóa chủ đề.' });
+      return;
+    }
+
+    const resolvedTopic = findExistingVocabularyCategory(topic, topicOptions) || normalizeVocabularyCategory(topic);
+
+    if (!resolvedTopic) {
+      setStatus({ type: 'error', message: 'Chủ đề không hợp lệ.' });
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Xóa chủ đề "${resolvedTopic}" sẽ xóa toàn bộ từ vựng bên trong. Bạn có chắc chắn muốn tiếp tục?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setDeletingTopic(resolvedTopic);
+      setStatus(null);
+
+      const deleteRes = await fetch('/api/vocab/topics', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ topic: resolvedTopic }),
+      });
+
+      const payload = await deleteRes.json();
+
+      if (!deleteRes.ok) {
+        throw new Error(payload?.error || 'Không thể xóa chủ đề.');
+      }
+
+      const deletedTopic = normalizeVocabularyCategory(payload?.topic || resolvedTopic);
+      const deletedTopicKey = normalizeVocabularyCategoryKey(deletedTopic);
+
+      setVocabulary((prev) => prev.filter((item) => normalizeVocabularyCategoryKey(item.category) !== deletedTopicKey));
+
+      if (selectedItem && normalizeVocabularyCategoryKey(selectedItem.category) === deletedTopicKey) {
+        resetFormForNew();
+      }
+
+      const deletedCount = Number(payload?.deletedCount || 0);
+      setStatus({
+        type: 'success',
+        message: `Đã xóa chủ đề "${deletedTopic}" và ${deletedCount} từ vựng liên quan.`,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Đã xảy ra lỗi không xác định.';
+      setStatus({ type: 'error', message });
+    } finally {
+      setDeletingTopic(null);
+    }
+  };
+
+  const onSaveWordFamily = async () => {
+    if (!session?.user) {
+      setStatus({ type: 'error', message: 'Vui lòng đăng nhập để lưu bộ từ liên quan.' });
+      return;
+    }
+
+    const primaryDraft = getPrimaryDraftFromForm();
+
+    if (!primaryDraft.word.trim()) {
+      setStatus({ type: 'error', message: 'Cần có từ chính trước khi lưu bộ từ liên quan.' });
+      return;
+    }
+
+    const mergedFamily = mergeWordFamilyDrafts(primaryDraft, wordFamilyDrafts);
+
+    if (mergedFamily.length < 2) {
+      setStatus({ type: 'error', message: 'Chưa có biến thể liên quan để lưu.' });
+      return;
+    }
+
+    try {
+      setSavingWordFamily(true);
+      setStatus(null);
+
+      const localSet = new Set(vocabulary.map((item) => normalizeVocabularyWord(item.word)));
+      const createdItems: VocabularyItem[] = [];
+
+      let createdCount = 0;
+      let skippedCount = 0;
+
+      const familyKey = wordFamilyKey || deriveVocabularyFamilyKey(primaryDraft.word);
+      const familyMembers = mergedFamily.map((entry) => mapDraftToFamilyMember(entry, entry.relation || entry.grammar));
+
+      for (const draft of mergedFamily) {
+        const key = normalizeVocabularyWord(draft.word);
+
+        if (!key || localSet.has(key)) {
+          skippedCount += 1;
+          continue;
+        }
+
+        const notes = upsertVocabularyFamilyMeta(
+          buildVocabularyNotes({
+            meaning: draft.meaning,
+            example: draft.example,
+            usageContext: draft.usageContext,
+            note: draft.note,
+            synonym: draft.synonym,
+            antonym: draft.antonym,
+            singularForm: draft.singularForm,
+            pluralForm: draft.pluralForm,
+            v2Form: draft.v2Form,
+            v3Form: draft.v3Form,
+          }) || null,
+          {
+            familyKey,
+            members: familyMembers,
+          }
+        );
+
+        const createRes = await fetch('/api/vocab', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            word: draft.word,
+            pronunciation: draft.pronunciation || null,
+            grammar: draft.grammar || null,
+            category: draft.category || null,
+            meaning: draft.meaning || null,
+            example: draft.example || null,
+            usageContext: draft.usageContext || null,
+            note: draft.note || null,
+            synonym: draft.synonym || null,
+            antonym: draft.antonym || null,
+            singularForm: draft.singularForm || null,
+            pluralForm: draft.pluralForm || null,
+            v2Form: draft.v2Form || null,
+            v3Form: draft.v3Form || null,
+            image: null,
+            notes,
+          }),
+        });
+
+        const payload = await createRes.json();
+
+        if (createRes.ok) {
+          createdItems.push(mapItemFromApi(payload));
+          localSet.add(key);
+          createdCount += 1;
+          continue;
+        }
+
+        if (createRes.status === 409) {
+          localSet.add(key);
+          skippedCount += 1;
+          continue;
+        }
+
+        throw new Error(payload?.error || `Không thể lưu biến thể "${draft.word}".`);
+      }
+
+      if (createdItems.length > 0) {
+        setVocabulary((prev) => [...createdItems, ...prev]);
+      }
+
+      setStatus({
+        type: createdCount > 0 ? 'success' : 'error',
+        message:
+          createdCount > 0
+            ? `Đã lưu ${createdCount} từ trong bộ word family IELTS.${skippedCount ? ` Bỏ qua ${skippedCount} từ trùng.` : ''}`
+            : 'Không có biến thể mới để lưu (toàn bộ đã trùng).',
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Đã xảy ra lỗi không xác định.';
+      setStatus({ type: 'error', message });
+    } finally {
+      setSavingWordFamily(false);
     }
   };
 
@@ -863,7 +1362,7 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={aiMode !== null || !session?.user}
+                  disabled={aiMode !== null || savingWordFamily || !session?.user}
                   onClick={onAIAutofill}
                   className="w-full border-primary/40"
                 >
@@ -883,11 +1382,59 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
                   <Sparkles className="h-4 w-4 text-primary" />
                   AI tạo 5-20 từ theo chủ đề
                 </h3>
-                <Input
-                  value={topicInput}
-                  onChange={(event) => setTopicInput(event.target.value)}
-                  placeholder="Ví dụ: Biến đổi khí hậu"
-                />
+
+                <div className="space-y-2">
+                  <Label>Chế độ chủ đề</Label>
+                  <div className="flex flex-wrap gap-2">
+                    <ChipFilter
+                      label="Chọn chủ đề có sẵn"
+                      isActive={aiTopicMode === 'existing'}
+                      onClick={() => {
+                        if (topicOptions.length > 0) {
+                          onAITopicModeChange('existing');
+                        }
+                      }}
+                    />
+                    <ChipFilter
+                      label="Thêm chủ đề mới"
+                      isActive={aiTopicMode === 'new'}
+                      onClick={() => onAITopicModeChange('new')}
+                    />
+                  </div>
+                </div>
+
+                {aiTopicMode === 'existing' && topicOptions.length > 0 ? (
+                  <div className="space-y-1">
+                    <Label htmlFor="aiExistingTopic">Chủ đề có sẵn</Label>
+                    <select
+                      id="aiExistingTopic"
+                      value={aiSelectedTopic}
+                      onChange={(event) => setAiSelectedTopic(event.target.value)}
+                      className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    >
+                      {topicOptions.map((topic) => (
+                        <option key={topic} value={topic}>
+                          {topic}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <Label htmlFor="aiNewTopic">Chủ đề mới</Label>
+                    <Input
+                      id="aiNewTopic"
+                      value={aiNewTopic}
+                      onChange={(event) => setAiNewTopic(event.target.value)}
+                      placeholder="Ví dụ: Biến đổi khí hậu"
+                    />
+                  </div>
+                )}
+
+                {topicOptions.length === 0 ? (
+                  <p className="text-xs text-text-muted">Chưa có chủ đề nào trong dữ liệu, vui lòng thêm chủ đề mới.</p>
+                ) : null}
+
                 <div className="space-y-1">
                   <Label htmlFor="topicCount">Số lượng từ</Label>
                   <select
@@ -926,7 +1473,7 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
 
                 <Button
                   type="button"
-                  disabled={aiMode !== null || !session?.user}
+                  disabled={aiMode !== null || savingWordFamily || !session?.user}
                   onClick={onGenerateByTopic}
                   className="w-full"
                 >
@@ -942,6 +1489,64 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
               </div>
             </div>
 
+            {wordFamilyDrafts.length > 0 ? (
+              <div className="rounded-xl border border-primary/25 bg-gradient-to-br from-primary/5 via-white to-secondary/20 p-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-text-main">Bảng Word Family IELTS</p>
+                    <p className="text-xs text-text-muted">
+                      AI đã tạo {wordFamilyDrafts.length} biến thể liên quan (noun/verb/adjective/adverb...) để bạn chuyển đổi ngay trong form.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={savingWordFamily || aiMode !== null || !session?.user}
+                    onClick={onSaveWordFamily}
+                    className="border-primary/40"
+                  >
+                    {savingWordFamily ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Đang lưu bộ từ...
+                      </>
+                    ) : (
+                      'Lưu toàn bộ Word Family'
+                    )}
+                  </Button>
+                </div>
+
+                <div className="mt-3 overflow-x-auto rounded-lg border border-primary/15 bg-white">
+                  <table className="w-full min-w-[760px] text-left text-sm">
+                    <thead className="bg-primary/10 text-xs uppercase tracking-wide text-primary-dark">
+                      <tr>
+                        <th className="px-3 py-2">Từ liên quan</th>
+                        <th className="px-3 py-2">Loại từ</th>
+                        <th className="px-3 py-2">Vai trò</th>
+                        <th className="px-3 py-2">Nghĩa</th>
+                        <th className="px-3 py-2 text-right">Tác vụ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {wordFamilyDrafts.map((entry, index) => (
+                        <tr key={`${entry.word}-${index}`} className="border-t border-primary/10 align-top">
+                          <td className="px-3 py-2 font-semibold text-text-main">{entry.word}</td>
+                          <td className="px-3 py-2 text-text-muted">{entry.grammar || 'related form'}</td>
+                          <td className="px-3 py-2 text-text-muted">{entry.relation || entry.grammar || 'related'}</td>
+                          <td className="px-3 py-2 text-text-muted line-clamp-2">{entry.meaning || entry.note || 'Chưa có mô tả'}</td>
+                          <td className="px-3 py-2 text-right">
+                            <Button type="button" size="sm" variant="ghost" onClick={() => applyDraftToForm(entry)}>
+                              Nạp vào form
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : null}
+
             {generatedVocabulary.length > 0 ? (
               <div className="rounded-xl border border-primary/20 bg-white p-4">
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -950,7 +1555,7 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
                   </p>
                   <Button
                     type="button"
-                    disabled={aiMode !== null || !session?.user}
+                    disabled={aiMode !== null || savingWordFamily || !session?.user}
                     onClick={onSaveGeneratedVocabulary}
                     className="md:w-auto"
                   >
@@ -1015,13 +1620,49 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="category">Chủ đề</Label>
-                  <Input
-                    id="category"
-                    value={form.category}
-                    onChange={(event) => onFieldChange('category', event.target.value)}
-                    placeholder="Education, Work, Environment..."
-                  />
+                  <Label>Chủ đề</Label>
+                  <div className="flex flex-wrap gap-2">
+                    <ChipFilter
+                      label="Chọn chủ đề có sẵn"
+                      isActive={manualTopicMode === 'existing'}
+                      onClick={() => {
+                        if (topicOptions.length > 0) {
+                          onManualTopicModeChange('existing');
+                        }
+                      }}
+                    />
+                    <ChipFilter
+                      label="Thêm chủ đề mới"
+                      isActive={manualTopicMode === 'new'}
+                      onClick={() => onManualTopicModeChange('new')}
+                    />
+                  </div>
+
+                  {manualTopicMode === 'existing' && topicOptions.length > 0 ? (
+                    <select
+                      id="category"
+                      value={manualSelectedTopic}
+                      onChange={(event) => onManualExistingTopicChange(event.target.value)}
+                      className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    >
+                      {topicOptions.map((topic) => (
+                        <option key={topic} value={topic}>
+                          {topic}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <Input
+                      id="category"
+                      value={manualNewTopic}
+                      onChange={(event) => onManualNewTopicChange(event.target.value)}
+                      placeholder="Education, Work, Environment..."
+                    />
+                  )}
+
+                  {manualTopicMode === 'existing' && topicOptions.length === 0 ? (
+                    <p className="text-xs text-text-muted">Chưa có chủ đề nào, vui lòng thêm chủ đề mới.</p>
+                  ) : null}
                 </div>
               </div>
 
@@ -1166,7 +1807,7 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
               <div className="flex flex-col gap-3 pt-2 md:flex-row">
                 <Button
                   type="submit"
-                  disabled={submitting || deleting || aiMode !== null || !session?.user}
+                  disabled={submitting || deleting || aiMode !== null || savingWordFamily || !session?.user}
                   className="w-full rounded-xl bg-gradient-to-r from-primary to-primary-dark py-6 text-base text-white"
                 >
                   {submitting ? 'Đang lưu...' : editingId ? 'Cập nhật từ vựng' : 'Lưu từ vựng mới'}
@@ -1176,7 +1817,7 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
                   <Button
                     type="button"
                     variant="destructive"
-                    disabled={submitting || deleting || aiMode !== null || !session?.user}
+                    disabled={submitting || deleting || aiMode !== null || savingWordFamily || !session?.user}
                     onClick={onDeleteCurrent}
                     className="w-full rounded-xl py-6 text-base md:w-auto"
                   >
@@ -1232,6 +1873,46 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
               {visibleVocabulary.length === 0 ? (
                 <p className="rounded-lg border border-dashed p-4 text-sm text-text-muted">Không tìm thấy từ vựng phù hợp.</p>
               ) : null}
+            </div>
+
+            <div className="rounded-lg border border-primary/15 bg-primary/5 p-3">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-text-main">Xóa chủ đề</p>
+                <span className="text-xs text-text-muted">Xóa cả từ bên trong</span>
+              </div>
+
+              {topicStats.length === 0 ? (
+                <p className="text-xs text-text-muted">Chưa có chủ đề nào để quản lý.</p>
+              ) : (
+                <div className="max-h-52 space-y-2 overflow-y-auto pr-1">
+                  {topicStats.map((entry) => (
+                    <div
+                      key={entry.category}
+                      className="flex items-center justify-between gap-2 rounded-md border border-primary/15 bg-white px-2 py-1.5"
+                    >
+                      <p className="text-xs text-text-main">
+                        {entry.category} <span className="text-text-muted">({entry.count})</span>
+                      </p>
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-red-600 hover:bg-red-50 hover:text-red-700"
+                        disabled={deletingTopic !== null || submitting || deleting || aiMode !== null || !session?.user}
+                        onClick={() => onDeleteTopic(entry.category)}
+                      >
+                        {deletingTopic === entry.category ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3.5 w-3.5" />
+                        )}
+                        <span className="sr-only">Xóa chủ đề {entry.category}</span>
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

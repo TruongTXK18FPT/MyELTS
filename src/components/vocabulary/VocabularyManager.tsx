@@ -6,6 +6,7 @@ import { PlusCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChipFilter } from '@/components/ui/ChipFilter';
+import { normalizeVocabularyCategoryKey } from '@/lib/vocabulary';
 import {
   type PronunciationAccent,
   type VocabularyItem,
@@ -32,6 +33,29 @@ const accentOptions: { label: string; value: PronunciationAccent }[] = [
 
 const ITEMS_PER_PAGE = 9;
 
+function compareTextDeterministic(a: string, b: string): number {
+  const normalizedA = normalizeVocabularyCategoryKey(a);
+  const normalizedB = normalizeVocabularyCategoryKey(b);
+
+  if (normalizedA < normalizedB) {
+    return -1;
+  }
+
+  if (normalizedA > normalizedB) {
+    return 1;
+  }
+
+  if (a < b) {
+    return -1;
+  }
+
+  if (a > b) {
+    return 1;
+  }
+
+  return 0;
+}
+
 export function VocabularyManager({ initialVocabulary }: VocabularyManagerProps) {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('Tất cả');
@@ -44,7 +68,7 @@ export function VocabularyManager({ initialVocabulary }: VocabularyManagerProps)
       new Set(initialVocabulary.map((item) => item.category?.trim()).filter(Boolean))
     ) as string[];
 
-    return ['Tất cả', ...uniqueCategories.sort((a, b) => a.localeCompare(b))];
+    return ['Tất cả', ...uniqueCategories.sort(compareTextDeterministic)];
   }, [initialVocabulary]);
 
   const filteredVocabulary = useMemo(() => {
@@ -79,11 +103,11 @@ export function VocabularyManager({ initialVocabulary }: VocabularyManagerProps)
 
     return filtered.sort((a, b) => {
       if (sortMode === 'a-z') {
-        return a.word.localeCompare(b.word);
+        return compareTextDeterministic(a.word, b.word);
       }
 
       if (sortMode === 'z-a') {
-        return b.word.localeCompare(a.word);
+        return compareTextDeterministic(b.word, a.word);
       }
 
       const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;

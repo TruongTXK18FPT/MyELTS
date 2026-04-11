@@ -2,7 +2,16 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { capitalizeVocabularyWord, isVietnameseMeaning, normalizeVocabularyWord } from '@/lib/vocabulary';
+import {
+  capitalizeVocabularyWord,
+  findExistingVocabularyCategory,
+  findRelatedVocabularyCategory,
+  isVietnameseMeaning,
+  normalizeVocabularyCategory,
+  normalizeVocabularyWord,
+  resolveVocabularyCategory,
+} from '@/lib/vocabulary';
+import { deriveVocabularyFamilyKey } from '@/lib/vocabulary-family';
 
 const mistralEndpoint = 'https://api.mistral.ai/v1/chat/completions';
 
@@ -49,8 +58,13 @@ const aiVocabItemSchema = z.object({
   v3Form: z.string().trim().max(120).optional().default(''),
 });
 
+const aiWordFamilyItemSchema = aiVocabItemSchema.extend({
+  relation: z.string().trim().max(120).optional().default(''),
+});
+
 const enrichResponseSchema = z.object({
   item: aiVocabItemSchema,
+  wordFamily: z.array(aiWordFamilyItemSchema).max(20).optional().default([]),
 });
 
 const generateResponseSchema = z.object({
@@ -58,6 +72,7 @@ const generateResponseSchema = z.object({
 });
 
 type AIVocabItem = z.infer<typeof aiVocabItemSchema>;
+type AIWordFamilyItem = z.infer<typeof aiWordFamilyItemSchema>;
 
 type MistralChoice = {
   message?: {
@@ -199,6 +214,13 @@ function sanitizeVocabItem(item: AIVocabItem): AIVocabItem {
   };
 }
 
+function sanitizeWordFamilyItem(item: AIWordFamilyItem): AIWordFamilyItem {
+  return {
+    ...sanitizeVocabItem(item),
+    relation: item.relation.trim(),
+  };
+}
+
 function isValidMeaning(item: AIVocabItem): boolean {
   return isVietnameseMeaning(item.meaning);
 }
@@ -255,12 +277,29 @@ async function callMistralForJson(userPrompt: string): Promise<unknown> {
   }
 }
 
-async function getExistingWordSet(): Promise<Set<string>> {
-  const words = await prisma.vocab.findMany({
-    select: { word: true },
+type UserVocabularySnapshot = {
+  existingWordSet: Set<string>;
+  existingTopics: string[];
+};
+
+async function getUserVocabularySnapshot(): Promise<UserVocabularySnapshot> {
+  const rows = await prisma.vocab.findMany({
+    select: {
+      word: true,
+      category: true,
+    },
   });
 
-  return new Set(words.map((entry) => normalizeVocabularyWord(entry.word)));
+  const existingWordSet = new Set(rows.map((entry) => normalizeVocabularyWord(entry.word)));
+
+  const existingTopics = Array.from(
+    new Set(rows.map((entry) => normalizeVocabularyCategory(entry.category)).filter(Boolean))
+  );
+
+  return {
+    existingWordSet,
+    existingTopics,
+  };
 }
 
 export async function POST(req: Request) {
@@ -272,6 +311,8 @@ export async function POST(req: Request) {
     }
 
     const payload = requestSchema.parse(await req.json());
+  const snapshot = await getUserVocabularySnapshot();
+    const existingTopics = snapshot.existingTopics;
 
     if (payload.action === 'enrich-from-term' || payload.action === 'enrich-from-vietnamese') {
       const inputTerm = payload.action === 'enrich-from-term' ? payload.term : payload.vietnameseVocabulary;
@@ -280,9 +321,14 @@ export async function POST(req: Request) {
         detectedLanguage === 'vi'
           ? `Given the Vietnamese term or phrase: "${inputTerm}".`
           : `Given the English term or phrase: "${inputTerm}".`;
+      const existingTopicsLine =
+        existingTopics.length > 0
+          ? `Existing topics in the database: ${existingTopics.join(', ')}.`
+          : 'There are no existing topics in the database yet.';
 
       const aiJson = await callMistralForJson(`
 ${sourceLine}
+${existingTopicsLine}
 
 Return JSON with this exact shape:
 {
@@ -301,27 +347,98 @@ Return JSON with this exact shape:
     "pluralForm": "Plural form if noun, otherwise empty",
     "v2Form": "Past tense form if verb, otherwise empty",
     "v3Form": "Past participle form if verb, otherwise empty"
-  }
+  },
+  "wordFamily": [
+    {
+      "word": "related word form",
+      "pronunciation": "IPA",
+      "grammar": "part of speech",
+      "relation": "verb|noun|adjective|adverb|agent noun|other",
+      "category": "topic",
+      "meaning": "Vietnamese meaning only",
+      "example": "Natural English sentence example with at least 8 words",
+      "usageContext": "Detailed usage guidance with at least 12 words",
+      "note": "Helpful IELTS note with at least 8 words",
+      "synonym": "Synonym term(s)",
+      "antonym": "Antonym term(s)",
+      "singularForm": "Singular form if noun, otherwise empty",
+      "pluralForm": "Plural form if noun, otherwise empty",
+      "v2Form": "Past tense form if verb, otherwise empty",
+      "v3Form": "Past participle form if verb, otherwise empty"
+    }
+  ]
 }
 
 Rules:
 - "word" must be in English.
 - Capitalize the first letter of "word".
 - "meaning" must be Vietnamese, not English.
+- Prefer an existing topic in "category" when it is semantically related.
+- Create a new "category" only when no existing topic matches the term.
+- Build a complete IELTS-ready word family when possible: noun, verb, adjective, adverb, and agent noun forms.
+- Every word family item must contain meaningful "relation" and practical learner guidance.
 - Keep "example", "usageContext", and "note" practical and specific for IELTS learners.
 - Do not include markdown.
 - Always return valid JSON only.
       `);
 
       const parsed = enrichResponseSchema.parse(aiJson);
-      const item = ensureDetailedItem(sanitizeVocabItem(parsed.item), 'general IELTS topics');
+      const enrichedItem = ensureDetailedItem(sanitizeVocabItem(parsed.item), 'general IELTS topics');
+
+      const relatedExistingTopic =
+        findExistingVocabularyCategory(enrichedItem.category, existingTopics) ||
+        findRelatedVocabularyCategory(`${inputTerm} ${enrichedItem.meaning} ${enrichedItem.category}`, existingTopics);
+
+      const resolvedCategory =
+        resolveVocabularyCategory(relatedExistingTopic || enrichedItem.category, existingTopics) || '';
+
+      const item: AIVocabItem = {
+        ...enrichedItem,
+        category: resolvedCategory,
+      };
+
+      const familyWordSet = new Set<string>([normalizeVocabularyWord(item.word)]);
+      const wordFamily = parsed.wordFamily
+        .map((candidate) => {
+          const sanitized = sanitizeWordFamilyItem(candidate);
+          const detailed = ensureDetailedItem(sanitized, resolvedCategory || 'general IELTS topics');
+
+          return {
+            ...detailed,
+            relation: sanitized.relation,
+          };
+        })
+        .filter((candidate) => {
+          const key = normalizeVocabularyWord(candidate.word);
+
+          if (!key || familyWordSet.has(key)) {
+            return false;
+          }
+
+          if (!isValidMeaning(candidate)) {
+            return false;
+          }
+
+          familyWordSet.add(key);
+          return true;
+        })
+        .slice(0, 12)
+        .map((candidate) => ({
+          ...candidate,
+          category: resolvedCategory,
+          relation: candidate.relation || candidate.grammar || 'related form',
+        }));
 
       if (!isValidMeaning(item)) {
         throw new Error('AI trả về nghĩa chưa đúng tiếng Việt, vui lòng thử lại.');
       }
 
+      const familyKey = deriveVocabularyFamilyKey(item.word || inputTerm);
+
       return NextResponse.json({
         item,
+        wordFamily,
+        familyKey,
       });
     }
 
@@ -332,11 +449,18 @@ Rules:
         ? `Target part(s) of speech: ${grammarFilters.join(', ')}.`
         : 'You may mix noun, verb, adjective, adverb, phrasal verb, collocation, and idiom.';
 
-    const existingWordSet = await getExistingWordSet();
+    const requestedTopic = normalizeVocabularyCategory(payload.topic);
+    const relatedExistingTopic =
+      findExistingVocabularyCategory(requestedTopic, existingTopics) ||
+      findRelatedVocabularyCategory(requestedTopic, existingTopics);
+    const resolvedTopic =
+      resolveVocabularyCategory(relatedExistingTopic || requestedTopic, existingTopics) || requestedTopic;
+
+    const existingWordSet = snapshot.existingWordSet;
     const blockedWords = Array.from(existingWordSet).slice(0, 220);
 
     const aiJson = await callMistralForJson(`
-Generate ${requestedCount + 8} unique English vocabulary items for IELTS learners about topic: "${payload.topic}".
+Generate ${requestedCount + 8} unique English vocabulary items for IELTS learners about topic: "${resolvedTopic}".
 
 ${grammarHint}
 
@@ -374,6 +498,7 @@ Rules:
 - "usageContext" must have at least 12 words with collocation/register guidance.
 - "note" must have at least 8 words and include a common-usage tip.
 - Do not repeat items from the existing words list.
+- Set "category" exactly to "${resolvedTopic}" for every item.
 - Use practical IELTS-level vocabulary.
     `);
 
@@ -386,7 +511,13 @@ Rules:
     let filteredByQuality = 0;
 
     for (const rawItem of parsed.items) {
-      const item = ensureDetailedItem(sanitizeVocabItem(rawItem), payload.topic);
+      const item = ensureDetailedItem(
+        {
+          ...sanitizeVocabItem(rawItem),
+          category: resolvedTopic,
+        },
+        resolvedTopic
+      );
       const key = normalizeVocabularyWord(item.word);
 
       if (!key || usedWordSet.has(key) || !isValidMeaning(item)) {
@@ -430,8 +561,13 @@ Rules:
       warningParts.push(`Đã bỏ ${filteredByQuality} từ do trùng hoặc chưa đạt yêu cầu chất lượng.`);
     }
 
+    if (resolvedTopic.toLowerCase() !== requestedTopic.toLowerCase()) {
+      warningParts.push(`Đã đồng bộ chủ đề về "${resolvedTopic}" theo chủ đề đã có trong hệ thống.`);
+    }
+
     return NextResponse.json({
       items: deduped,
+      topic: resolvedTopic,
       warning: warningParts.length > 0 ? warningParts.join(' ') : null,
     });
   } catch (error) {

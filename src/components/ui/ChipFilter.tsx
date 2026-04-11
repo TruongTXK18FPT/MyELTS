@@ -11,6 +11,7 @@ type ChipFilterProps = {
 export function ChipFilter({ label, isActive, onClick }: ChipFilterProps) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={cn(
         'whitespace-nowrap rounded-full border px-4 py-1.5 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',

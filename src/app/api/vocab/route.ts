@@ -3,7 +3,12 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { buildVocabularyNotes } from '@/lib/vocabulary-seed';
-import { capitalizeVocabularyWord, isVietnameseMeaning } from '@/lib/vocabulary';
+import {
+  capitalizeVocabularyWord,
+  isVietnameseMeaning,
+  normalizeVocabularyCategory,
+  resolveVocabularyCategory,
+} from '@/lib/vocabulary';
 
 const nullableLimited = (max: number) => z.string().trim().max(max).nullable().optional();
 
@@ -37,6 +42,19 @@ export async function POST(req: Request) {
 
     const payload = createVocabSchema.parse(await req.json());
     const normalizedWord = capitalizeVocabularyWord(payload.word);
+
+    const existingCategories = (
+      await prisma.vocab.findMany({
+        where: {
+          category: { not: null },
+        },
+        select: { category: true },
+      })
+    )
+      .map((entry) => normalizeVocabularyCategory(entry.category))
+      .filter(Boolean);
+
+    const resolvedCategory = resolveVocabularyCategory(payload.category, existingCategories);
 
     const legacyNotes =
       payload.notes ||
@@ -74,7 +92,7 @@ export async function POST(req: Request) {
         image: payload.image || null,
         grammar: payload.grammar || null,
         pronunciation: payload.pronunciation || null,
-        category: payload.category || null,
+        category: resolvedCategory,
         meaning: payload.meaning || null,
         example: payload.example || null,
         usageContext: payload.usageContext || null,

@@ -3,7 +3,12 @@ import { z } from 'zod';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { buildVocabularyNotes } from '@/lib/vocabulary-seed';
-import { capitalizeVocabularyWord, isVietnameseMeaning } from '@/lib/vocabulary';
+import {
+  capitalizeVocabularyWord,
+  isVietnameseMeaning,
+  normalizeVocabularyCategory,
+  resolveVocabularyCategory,
+} from '@/lib/vocabulary';
 
 type RouteParams = { id: string };
 type RouteContext = { params: Promise<RouteParams> };
@@ -49,7 +54,9 @@ export async function PUT(req: Request, context: RouteContext) {
     const normalizedWord = capitalizeVocabularyWord(payload.word);
 
     const ownedVocab = await prisma.vocab.findFirst({
-      where: { id },
+      where: {
+        id,
+      },
       select: { id: true },
     });
 
@@ -72,6 +79,19 @@ export async function PUT(req: Request, context: RouteContext) {
       return NextResponse.json({ error: 'Từ vựng này đã tồn tại trong hệ thống.' }, { status: 409 });
     }
 
+    const existingCategories = (
+      await prisma.vocab.findMany({
+        where: {
+          category: { not: null },
+        },
+        select: { category: true },
+      })
+    )
+      .map((entry) => normalizeVocabularyCategory(entry.category))
+      .filter(Boolean);
+
+    const resolvedCategory = resolveVocabularyCategory(payload.category, existingCategories);
+
     const legacyNotes =
       payload.notes ||
       buildVocabularyNotes({
@@ -88,14 +108,16 @@ export async function PUT(req: Request, context: RouteContext) {
       }) ||
       null;
 
-    const updated = await prisma.vocab.update({
-      where: { id },
+    const updatedResult = await prisma.vocab.updateMany({
+      where: {
+        id,
+      },
       data: {
         word: normalizedWord,
         image: payload.image || null,
         grammar: payload.grammar || null,
         pronunciation: payload.pronunciation || null,
-        category: payload.category || null,
+        category: resolvedCategory,
         meaning: payload.meaning || null,
         example: payload.example || null,
         usageContext: payload.usageContext || null,
@@ -109,6 +131,20 @@ export async function PUT(req: Request, context: RouteContext) {
         notes: legacyNotes,
       },
     });
+
+    if (updatedResult.count === 0) {
+      return NextResponse.json({ error: 'Không tìm thấy từ vựng để cập nhật.' }, { status: 404 });
+    }
+
+    const updated = await prisma.vocab.findFirst({
+      where: {
+        id,
+      },
+    });
+
+    if (!updated) {
+      return NextResponse.json({ error: 'Không tìm thấy từ vựng để cập nhật.' }, { status: 404 });
+    }
 
     return NextResponse.json(updated);
   } catch (error) {
