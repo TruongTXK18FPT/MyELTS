@@ -8,6 +8,11 @@ import { QuickActions } from './QuickActions';
 import { SpeakingRecorder } from './SpeakingRecorder';
 import type { TutorQuickAction } from '@/lib/tutor-client';
 import type { MessageContentType, TutorType } from '@/lib/chat-utils';
+import {
+  DEFAULT_LISTENING_VOICE_BAND,
+  LISTENING_VOICE_OPTIONS,
+  type ListeningVoiceBand,
+} from '@/lib/listening-voice';
 
 type SendPayload = {
   content: string;
@@ -29,8 +34,12 @@ export function ChatInputBar({ tutorType, isSending, quickActions, onSendMessage
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [languagePreference, setLanguagePreference] = useState<'auto' | 'vi' | 'en'>('auto');
+  const [listeningVoiceBand, setListeningVoiceBand] = useState<ListeningVoiceBand>(DEFAULT_LISTENING_VOICE_BAND);
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const activeListeningVoiceOption =
+    LISTENING_VOICE_OPTIONS.find((option) => option.id === listeningVoiceBand) || LISTENING_VOICE_OPTIONS[0];
 
   useEffect(() => {
     if (!imageFile) {
@@ -75,7 +84,8 @@ export function ChatInputBar({ tutorType, isSending, quickActions, onSendMessage
       contentType: tutorType === 'SPEAKING' ? 'SPEAKING_FEEDBACK' : imageFile ? 'IMAGE' : 'TEXT',
       metadata: {
         languagePreference,
-        cuteTone: true,
+        toneMode: 'natural',
+        ...(tutorType === 'LISTENING' ? { listeningVoiceBand } : {}),
       },
       imageFile: options?.image ?? imageFile,
       audioBlob: options?.audioBlob || null,
@@ -149,6 +159,32 @@ export function ChatInputBar({ tutorType, isSending, quickActions, onSendMessage
           </Button>
         ))}
       </div>
+
+      {tutorType === 'LISTENING' && (
+        <div className="space-y-1.5 rounded-2xl border border-rose-200/70 bg-rose-50/45 px-2.5 py-2">
+          <p className="text-xs font-semibold text-rose-700">Voice Band Profile:</p>
+          <div className="flex flex-wrap gap-2">
+            {LISTENING_VOICE_OPTIONS.map((option) => (
+              <Button
+                key={option.id}
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={isSending}
+                className={`h-7 rounded-full px-3 text-xs ${
+                  listeningVoiceBand === option.id
+                    ? 'border-rose-400 bg-rose-100 text-rose-700'
+                    : 'border-rose-200 bg-white/80 text-rose-500'
+                }`}
+                onClick={() => setListeningVoiceBand(option.id)}
+              >
+                {option.label}
+              </Button>
+            ))}
+          </div>
+          <p className="text-[11px] text-rose-600">{activeListeningVoiceOption.description}</p>
+        </div>
+      )}
 
       {imagePreview && (
         <div className="relative w-fit rounded-2xl border border-rose-200/80 bg-white p-2">

@@ -10,6 +10,7 @@ import {
   buildSessionTitleFromMessage,
 } from '@/lib/chat-utils';
 import { CHAT_MODEL_DEFAULT, CHAT_MODEL_WRITING_EVAL, getTutorDefinition } from '@/ai/tutor-config';
+import { getListeningVoiceProfile, pickListeningVoiceBandFromMetadata } from '@/lib/listening-voice';
 
 type MistralChoice = {
   message?: {
@@ -129,6 +130,71 @@ function normalizeLinks(value: unknown): string[] {
     })
     .filter((item) => /^https?:\/\//.test(item))
     .slice(0, 4);
+}
+
+function markdownToPlainText(markdown: string): string {
+  return markdown
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^\s*[-*+]\s+/gm, '')
+    .replace(/^\s*\d+[.)]\s+/gm, '')
+    .replace(/^\s*>\s+/gm, '')
+    .replace(/[|]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractTranscriptForTts(response: string): string {
+  const headingSection = response.match(
+    /(?:^|\n)#{1,6}\s*(?:audio\s*script|transcript|script)\s*\n([\s\S]*?)(?=\n#{1,6}\s|\n---\s*\n|$)/i
+  );
+
+  if (headingSection && headingSection[1]) {
+    return markdownToPlainText(headingSection[1]).slice(0, 5000);
+  }
+
+  const inlineSection = response.match(
+    /(?:^|\n)\s*(?:audio\s*script|transcript|script)\s*:\s*([\s\S]*?)(?=\n\s*(?:questions?|answer\s*key|strategy)\b|$)/i
+  );
+
+  if (inlineSection && inlineSection[1]) {
+    return markdownToPlainText(inlineSection[1]).slice(0, 5000);
+  }
+
+  return markdownToPlainText(response).slice(0, 5000);
+}
+
+function enrichListeningMetadata(
+  metadata: Record<string, unknown>,
+  response: string,
+  requestedBand: ReturnType<typeof pickListeningVoiceBandFromMetadata>
+): Record<string, unknown> {
+  const profile = getListeningVoiceProfile(requestedBand);
+  const transcriptFromMetadata =
+    typeof metadata.transcriptForTts === 'string' && metadata.transcriptForTts.trim()
+      ? metadata.transcriptForTts.trim()
+      : '';
+
+  const transcriptForTts = transcriptFromMetadata || extractTranscriptForTts(response);
+
+  return {
+    ...metadata,
+    listeningVoiceBand: requestedBand,
+    ttsProfile: {
+      targetBand: profile.id,
+      bandLabel: profile.label,
+      description: profile.description,
+      rate: profile.targetRate,
+      pitch: profile.targetPitch,
+      lang: profile.language,
+      accentHint: profile.accentHint,
+      voiceHints: profile.voiceHints,
+      pauseMs: profile.pauseMs,
+    },
+    transcriptForTts,
+  };
 }
 
 function normalizeAssistantPayload(
@@ -477,6 +543,19 @@ export async function POST(req: Request) {
         ? '- Reply in English.'
         : '- Detect user language (Vietnamese or English) and reply in the same language.';
 
+    const requestedListeningVoiceBand = pickListeningVoiceBandFromMetadata(asRecord(payload.metadata));
+    const requestedListeningVoiceProfile = getListeningVoiceProfile(requestedListeningVoiceBand);
+
+    const listeningVoiceInstruction =
+      tutorType === 'LISTENING'
+        ? `- Listening voice profile requested by learner: ${requestedListeningVoiceProfile.label} (${requestedListeningVoiceProfile.description})\n- If generating a listening exercise, keep transcript punctuation natural for speech playback and include metadata.transcriptForTts as plain text.`
+        : '';
+
+    const aiUserMessage =
+      tutorType === 'LISTENING'
+        ? `${payload.content}\n\n[internal_listening_voice_profile]\n- targetBand: ${requestedListeningVoiceProfile.label}\n- targetRate: ${requestedListeningVoiceProfile.targetRate}\n- accentHint: ${requestedListeningVoiceProfile.accentHint}`
+        : payload.content;
+
     const model = pickModelForMessage(tutorType, payload.content);
 
     let provider: 'gemini' | 'mistral' = 'mistral';
@@ -487,7 +566,7 @@ export async function POST(req: Request) {
     if (process.env.GOOGLE_GENAI_API_KEY && process.env.AI_CHAT_PROVIDER !== 'mistral') {
       try {
         const geminiOutput = await tutor.flow({
-          message: payload.content,
+          message: aiUserMessage,
           history: contextualMessages.map((item) => ({
             role: item.role as 'user' | 'assistant' | 'system',
             content: item.content,
@@ -526,16 +605,18 @@ ${languageInstruction}
 - For reading practice workflows, NEVER reveal the official answer key before the learner submits answers.
 - If learner has not submitted answers yet: return passage/questions only, set metadata.awaitingLearnerAnswers=true, and store the key in metadata.hiddenAnswerKey.
 - If learner submits answers: give concise feedback first, then provide the official answer key.
-- Keep the conversation sweet, friendly, and cute while still professional.
-- Use 1-2 warm emoji maximum when appropriate.
+- Keep the conversation warm, natural, and professional.
+- Use emoji rarely and only when contextually useful.
 - For listening tasks, provide TTS-friendly transcript and optional YouTube references.
+- Keep metadata consistent and machine-parseable for UI rendering.
 - Keep feedback specific, practical, and IELTS-oriented.
+${listeningVoiceInstruction}
 - Return strictly valid JSON following the expected schema.`,
             },
             ...contextualMessages,
             {
               role: 'user',
-              content: payload.content,
+              content: aiUserMessage,
             },
           ],
         }),
@@ -613,6 +694,11 @@ ${languageInstruction}
           finalAssistantResponse = `${finalAssistantResponse.trim()}\n\n### Official Answer Key\n${effectiveAnswerKeyForReveal}`;
         }
       }
+    }
+
+    if (tutorType === 'LISTENING' && assistantPayload.contentType === 'LISTENING_EXERCISE') {
+      const enriched = enrichListeningMetadata(finalAssistantMetadata, finalAssistantResponse, requestedListeningVoiceBand);
+      Object.assign(finalAssistantMetadata, enriched);
     }
 
     const mergedMetadata = {

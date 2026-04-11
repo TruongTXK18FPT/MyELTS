@@ -83,7 +83,7 @@ export function ChatMessageBubble({ message, tutorName, tutorEmoji, tutorAccent,
         {message.contentType === 'ESSAY_EVALUATION' && !isFromUser && <EssayEvaluationCard metadata={message.metadata} />}
 
         {message.contentType === 'LISTENING_EXERCISE' && !isFromUser && (
-          <AudioPlayer audioUrl={message.audioUrl} transcript={message.content} youtubeLinks={youtubeLinks} />
+          <AudioPlayer audioUrl={message.audioUrl} transcript={message.content} youtubeLinks={youtubeLinks} metadata={message.metadata} />
         )}
 
         {message.contentType === 'READING_PASSAGE' && !isFromUser && (
