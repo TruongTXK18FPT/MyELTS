@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import type { VocabularyItem } from '@/components/vocabulary/VocabularyList';
 import { VocabularyFormManager } from '@/components/vocabulary/VocabularyFormManager';
 import { prisma } from '@/lib/prisma';
@@ -68,7 +69,9 @@ export default async function VocabularyManagePage() {
 
   return (
     <div className="container py-8 md:py-12">
-      <VocabularyFormManager initialVocabulary={initialVocabulary} />
+      <Suspense fallback={<div className="text-sm text-muted-foreground">Dang tai trang quan ly tu vung...</div>}>
+        <VocabularyFormManager initialVocabulary={initialVocabulary} />
+      </Suspense>
     </div>
   );
 }
