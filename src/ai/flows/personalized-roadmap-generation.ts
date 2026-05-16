@@ -17,9 +17,15 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const PersonalizedRoadmapInputSchema = z.object({
-  currentBandScore: z
+  diagnosticOverallBand: z
     .number()
-    .describe('The current overall IELTS band score of the user.'),
+    .describe('The estimated overall IELTS band score from the diagnostic placement test.'),
+  diagnosticSkillBands: z.object({
+    listening: z.number().describe('Estimated Listening band from the diagnostic placement test.'),
+    reading: z.number().describe('Estimated Reading band from the diagnostic placement test.'),
+    writing: z.number().describe('Estimated Writing band from the diagnostic placement test.'),
+    speaking: z.number().describe('Estimated Speaking band from the diagnostic placement test.'),
+  }),
   targetBandScore: z
     .number()
     .describe('The target overall IELTS band score of the user.'),
@@ -78,7 +84,15 @@ const prompt = ai.definePrompt({
   output: {schema: PersonalizedRoadmapOutputSchema},
   prompt: `You are an expert IELTS tutor who specializes in creating personalized study plans.
 
-  Based on the user's current IELTS band score of {{currentBandScore}}, target band score of {{targetBandScore}}, available study time of {{availableTimePerWeek}} hours per week, identified skill gaps: {{skillGaps}}, and preferred study materials: {{studyMaterialsPreference}}, generate a personalized study plan.
+  The learner has completed an entrance diagnostic test.
+  - Estimated overall band: {{diagnosticOverallBand}}
+  - Estimated skill bands:
+    - Listening: {{diagnosticSkillBands.listening}}
+    - Reading: {{diagnosticSkillBands.reading}}
+    - Writing: {{diagnosticSkillBands.writing}}
+    - Speaking: {{diagnosticSkillBands.speaking}}
+
+  Based on this diagnostic result, target band score {{targetBandScore}}, available study time of {{availableTimePerWeek}} hours per week, identified skill gaps: {{skillGaps}}, and preferred study materials: {{studyMaterialsPreference}}, generate a personalized study plan.
 
   The study plan should include:
   - An estimated timeline for achieving the target band score.

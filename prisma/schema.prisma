@@ -32,6 +32,25 @@ enum MessageContentType {
   SPEAKING_FEEDBACK
 }
 
+enum PlacementSkill {
+  LISTENING
+  READING
+  WRITING
+  SPEAKING
+}
+
+enum RoadmapPlanStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum RoadmapTaskStatus {
+  TODO
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -50,6 +69,8 @@ model User {
   playlists     Playlist[]
   musicTracks   MusicTrack[]
   chatSessions  ChatSession[]
+  diagnosticResults DiagnosticResult[]
+  roadmapPlans  RoadmapPlan[]
 }
 
 model ChatSession {
@@ -240,4 +261,102 @@ model PlaylistTrack {
   @@unique([playlistId, trackId])
   @@index([playlistId, order])
   @@index([trackId])
+}
+
+model DiagnosticResult {
+  id           String           @id @default(cuid())
+  userId       String
+  takenAt      DateTime         @default(now())
+  expiresAt    DateTime
+  overallBand  Float
+  listeningBand Float
+  readingBand  Float
+  writingBand  Float
+  speakingBand Float
+  weakSkills   PlacementSkill[] @default([])
+  strongSkills PlacementSkill[] @default([])
+  rawAnswers   Json?
+  createdAt    DateTime         @default(now())
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roadmapPlans RoadmapPlan[]
+
+  @@index([userId, takenAt])
+}
+
+model RoadmapPlan {
+  id                       String            @id @default(cuid())
+  userId                   String
+  diagnosticResultId       String
+  status                   RoadmapPlanStatus @default(ACTIVE)
+  targetBandScore          Float
+  availableTimePerWeek     Int
+  studyMaterialsPreference String?
+  skillGaps                String?
+  estimatedTimeline        String
+  weeklyStudyPlanText      String            @db.Text
+  suggestedResourcesText   String            @db.Text
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
+
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  diagnosticResult DiagnosticResult @relation(fields: [diagnosticResultId], references: [id], onDelete: Restrict)
+  weeks            RoadmapWeek[]
+  replanEvents     RoadmapReplanEvent[]
+
+  @@index([userId, status])
+  @@index([diagnosticResultId])
+}
+
+model RoadmapWeek {
+  id              String           @id @default(cuid())
+  roadmapPlanId   String
+  weekIndex       Int
+  phase           String?
+  focusSkills     PlacementSkill[] @default([])
+  targetHours     Int
+  successCriteria String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  roadmapPlan RoadmapPlan @relation(fields: [roadmapPlanId], references: [id], onDelete: Cascade)
+  tasks      RoadmapTask[]
+
+  @@unique([roadmapPlanId, weekIndex])
+  @@index([roadmapPlanId, weekIndex])
+}
+
+model RoadmapTask {
+  id               String           @id @default(cuid())
+  roadmapWeekId    String
+  title            String
+  skill            PlacementSkill
+  taskType         String
+  linkedPath       String?
+  estimatedMinutes Int
+  mandatory        Boolean          @default(true)
+  dueDate          DateTime?
+  status           RoadmapTaskStatus @default(TODO)
+  completedAt      DateTime?
+  notes            String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  roadmapWeek RoadmapWeek @relation(fields: [roadmapWeekId], references: [id], onDelete: Cascade)
+
+  @@index([roadmapWeekId, status])
+}
+
+model RoadmapReplanEvent {
+  id               String     @id @default(cuid())
+  roadmapPlanId    String
+  reason           String
+  completionRate   Float?
+  adjustmentPercent Int?
+  summary          String?
+  createdAt        DateTime   @default(now())
+
+  roadmapPlan RoadmapPlan @relation(fields: [roadmapPlanId], references: [id], onDelete: Cascade)
+
+  @@index([roadmapPlanId, createdAt])
 }
