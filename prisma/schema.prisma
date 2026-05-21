@@ -51,6 +51,15 @@ enum RoadmapTaskStatus {
   SKIPPED
 }
 
+enum IeltsTestType {
+  ACADEMIC
+}
+
+enum DiagnosticAttemptStatus {
+  GENERATED
+  SUBMITTED
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -70,6 +79,8 @@ model User {
   musicTracks   MusicTrack[]
   chatSessions  ChatSession[]
   diagnosticResults DiagnosticResult[]
+  diagnosticAttempts DiagnosticAttempt[]
+  listeningAudioAssets ListeningAudioAsset[]
   roadmapPlans  RoadmapPlan[]
 }
 
@@ -282,6 +293,48 @@ model DiagnosticResult {
   roadmapPlans RoadmapPlan[]
 
   @@index([userId, takenAt])
+}
+
+model DiagnosticAttempt {
+  id               String                  @id @default(cuid())
+  userId           String
+  ieltsType        IeltsTestType           @default(ACADEMIC)
+  status           DiagnosticAttemptStatus @default(GENERATED)
+  survey           Json
+  generatedTest    Json
+  submittedAnswers Json?
+  skillScores      Json?
+  aiReview         Json?
+  diagnosticResultId String?
+  provider         String?
+  modelUsed        String?
+  createdAt        DateTime                @default(now())
+  submittedAt      DateTime?
+  updatedAt        DateTime                @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, status])
+  @@index([diagnosticResultId])
+}
+
+model ListeningAudioAsset {
+  id          String   @id @default(cuid())
+  userId      String
+  attemptId   String?
+  url         String
+  filename    String?
+  mimeType    String?
+  size        Int?
+  durationSec Int?
+  sourceNote  String?
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([attemptId])
 }
 
 model RoadmapPlan {

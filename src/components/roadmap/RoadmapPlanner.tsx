@@ -371,7 +371,7 @@ export function RoadmapPlanner() {
               Latest Diagnostic Snapshot
             </CardTitle>
             <CardDescription>
-              This snapshot is used as the starting point for roadmap generation.
+              This snapshot is used as the starting point. Roadmap V1 analyzes scored Reading and Writing first.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
@@ -437,7 +437,7 @@ export function RoadmapPlanner() {
           <CardHeader>
             <CardTitle className="text-2xl">Generate Personalized Roadmap</CardTitle>
             <CardDescription>
-              Configure your target and weekly study load. The system uses your latest diagnostic as baseline.
+              Configure your target and weekly study load. The system uses your latest Reading/Writing diagnostic as baseline.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
@@ -499,8 +499,8 @@ export function RoadmapPlanner() {
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">Current Learning Roadmap</CardTitle>
-              <CardDescription>
-                Deterministic planning + AI recommendations. Update task status to keep the roadmap adaptive.
+            <CardDescription>
+                Reading/Writing V1 planning with AI recommendations. Update task status to keep the roadmap adaptive.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">

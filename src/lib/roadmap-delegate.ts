@@ -7,6 +7,17 @@ type DiagnosticResultDelegate = {
   create: <T = any>(args: DelegateArgs) => Promise<T>;
 };
 
+type DiagnosticAttemptDelegate = {
+  findFirst: <T = any>(args: DelegateArgs) => Promise<T | null>;
+  findUnique: <T = any>(args: DelegateArgs) => Promise<T | null>;
+  create: <T = any>(args: DelegateArgs) => Promise<T>;
+  update: <T = any>(args: DelegateArgs) => Promise<T>;
+};
+
+type ListeningAudioAssetDelegate = {
+  create: <T = any>(args: DelegateArgs) => Promise<T>;
+};
+
 type RoadmapPlanDelegate = {
   findFirst: <T = any>(args: DelegateArgs) => Promise<T | null>;
   create: <T = any>(args: DelegateArgs) => Promise<T>;
@@ -28,6 +39,14 @@ type RoadmapReplanEventDelegate = {
 
 export function getDiagnosticResultDelegate(client: unknown = prisma): DiagnosticResultDelegate | null {
   return (client as { diagnosticResult?: DiagnosticResultDelegate }).diagnosticResult ?? null;
+}
+
+export function getDiagnosticAttemptDelegate(client: unknown = prisma): DiagnosticAttemptDelegate | null {
+  return (client as { diagnosticAttempt?: DiagnosticAttemptDelegate }).diagnosticAttempt ?? null;
+}
+
+export function getListeningAudioAssetDelegate(client: unknown = prisma): ListeningAudioAssetDelegate | null {
+  return (client as { listeningAudioAsset?: ListeningAudioAssetDelegate }).listeningAudioAsset ?? null;
 }
 
 export function getRoadmapPlanDelegate(client: unknown = prisma): RoadmapPlanDelegate | null {

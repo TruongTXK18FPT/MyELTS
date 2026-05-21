@@ -59,6 +59,8 @@ export type RoadmapBlueprint = {
   weeks: RoadmapWeekBlueprint[];
 };
 
+export type RoadmapMode = 'ALL_SKILLS' | 'READING_WRITING_V1';
+
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
@@ -168,11 +170,68 @@ function getPhaseName(weekIndex: number, weekCount: number): string {
 function buildWeeklyTasks(
   minutesBySkill: Record<PlacementSkillKey, number>,
   weakSkills: PlacementSkillKey[],
-  weekIndex: number
+  weekIndex: number,
+  mode: RoadmapMode = 'ALL_SKILLS'
 ): RoadmapTaskBlueprint[] {
-  const weakOrder: PlacementSkillKey[] = weakSkills.length > 0 ? weakSkills : ['writing', 'speaking'];
+  const activeWeakSkills = mode === 'READING_WRITING_V1'
+    ? weakSkills.filter((skill) => skill === 'reading' || skill === 'writing')
+    : weakSkills;
+  const weakOrder: PlacementSkillKey[] = activeWeakSkills.length > 0 ? activeWeakSkills : ['writing', 'reading'];
   const primaryWeak = weakOrder[0];
   const secondaryWeak = weakOrder[1] ?? primaryWeak;
+
+  if (mode === 'READING_WRITING_V1') {
+    return [
+      {
+        title: 'Reading diagnostic booster: timed passage with MCQ and T/F/NG review',
+        skill: 'reading',
+        taskType: 'reading_diagnostic_booster',
+        linkedPath: '/ai-chat',
+        estimatedMinutes: Math.max(55, Math.floor(minutesBySkill.reading * 0.45)),
+        mandatory: true,
+      },
+      {
+        title: 'Reading evidence drill: keyword mapping, paraphrase trace, and wrong-answer log',
+        skill: 'reading',
+        taskType: 'reading_evidence_review',
+        linkedPath: '/ai-chat',
+        estimatedMinutes: Math.max(40, Math.floor(minutesBySkill.reading * 0.3)),
+        mandatory: true,
+      },
+      {
+        title: 'Writing Task 1: complete one Academic report and request rubric feedback',
+        skill: 'writing',
+        taskType: 'writing_task1_practice',
+        linkedPath: '/ai-chat',
+        estimatedMinutes: Math.max(55, Math.floor(minutesBySkill.writing * 0.35)),
+        mandatory: true,
+      },
+      {
+        title: 'Writing Task 2: write one essay and revise the weakest rubric criterion',
+        skill: 'writing',
+        taskType: 'writing_task2_practice',
+        linkedPath: '/ai-chat',
+        estimatedMinutes: Math.max(70, Math.floor(minutesBySkill.writing * 0.45)),
+        mandatory: true,
+      },
+      {
+        title: `Priority correction cycle for ${placementSkillLabels[primaryWeak]}`,
+        skill: primaryWeak,
+        taskType: 'diagnostic_priority_cycle',
+        linkedPath: primaryWeak === 'writing' ? '/ai-chat' : '/tests',
+        estimatedMinutes: 45,
+        mandatory: true,
+      },
+      {
+        title: `Language consolidation for ${placementSkillLabels[secondaryWeak]} evidence from diagnostic`,
+        skill: secondaryWeak,
+        taskType: 'language_system',
+        linkedPath: secondaryWeak === 'writing' ? '/grammar' : '/vocabulary',
+        estimatedMinutes: 35,
+        mandatory: false,
+      },
+    ];
+  }
 
   const tasks: RoadmapTaskBlueprint[] = [
     {
@@ -242,21 +301,26 @@ export function buildRoadmapBlueprint(input: {
   weakSkills: PlacementSkillKey[];
   targetBandScore: number;
   availableTimePerWeek: number;
+  mode?: RoadmapMode;
 }): RoadmapBlueprint {
   const requiredHours = estimateRequiredHours(input.diagnosticOverallBand, input.targetBandScore);
   const weekCount = estimateWeeks(requiredHours, input.availableTimePerWeek);
   const totalMinutesPerWeek = Math.max(180, input.availableTimePerWeek * 60);
   const weightMap = getSkillWeightMap(input.diagnosticBands, input.targetBandScore, input.weakSkills);
+  const mode = input.mode || 'ALL_SKILLS';
 
   const weeks: RoadmapWeekBlueprint[] = [];
 
   for (let week = 1; week <= weekCount; week += 1) {
     const phase = getPhaseName(week, weekCount);
     const minutesBySkill = allocateSkillMinutes(totalMinutesPerWeek, weightMap);
-    const focusSkills = [...input.weakSkills].slice(0, 2);
+    const focusSkills = (mode === 'READING_WRITING_V1'
+      ? input.weakSkills.filter((skill) => skill === 'reading' || skill === 'writing')
+      : [...input.weakSkills]
+    ).slice(0, 2);
 
     if (focusSkills.length === 0) {
-      focusSkills.push('writing', 'speaking');
+      focusSkills.push('writing', mode === 'READING_WRITING_V1' ? 'reading' : 'speaking');
     }
 
     weeks.push({
@@ -268,19 +332,27 @@ export function buildRoadmapBlueprint(input: {
         week % 4 === 0
           ? 'Complete one mock section set and reduce repeated error types by at least 20%.'
           : 'Complete all mandatory tasks and keep weekly completion at or above 75%.',
-      tasks: buildWeeklyTasks(minutesBySkill, input.weakSkills, week),
+      tasks: buildWeeklyTasks(minutesBySkill, input.weakSkills, week, mode),
     });
   }
 
-  const weakSummary = input.weakSkills.length > 0
-    ? input.weakSkills.map((skill) => placementSkillLabels[skill]).join(', ')
-    : 'Writing, Speaking';
+  const summaryWeakSkills = mode === 'READING_WRITING_V1'
+    ? input.weakSkills.filter((skill) => skill === 'reading' || skill === 'writing')
+    : input.weakSkills;
+  const weakSummary = summaryWeakSkills.length > 0
+    ? summaryWeakSkills.map((skill) => placementSkillLabels[skill]).join(', ')
+    : mode === 'READING_WRITING_V1'
+      ? 'Reading, Writing'
+      : 'Writing, Speaking';
   const monthEstimate = roundHalf(weekCount / 4);
 
   return {
     weekCount,
     estimatedTimeline: `${weekCount} weeks (~${monthEstimate} months)`,
-    skillGapsSummary: `Priority skills from diagnostic: ${weakSummary}`,
+    skillGapsSummary:
+      mode === 'READING_WRITING_V1'
+        ? `Priority skills from AI diagnostic V1 (Reading/Writing scored, Listening/Speaking survey-only): ${weakSummary}`
+        : `Priority skills from diagnostic: ${weakSummary}`,
     weeks,
   };
 }

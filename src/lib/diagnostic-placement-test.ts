@@ -1,34 +1,6 @@
+import { z } from 'zod';
+
 export type PlacementSkillKey = 'listening' | 'reading' | 'writing' | 'speaking';
-
-export type PlacementQuestionOption = {
-  id: string;
-  text: string;
-};
-
-export type PlacementQuestion = {
-  id: string;
-  skill: PlacementSkillKey;
-  prompt: string;
-  options: PlacementQuestionOption[];
-  correctOptionId: string;
-  explanation: string;
-};
-
-export type PlacementSkillResult = {
-  skill: PlacementSkillKey;
-  correct: number;
-  total: number;
-  band: number;
-};
-
-export type PlacementResult = {
-  totalCorrect: number;
-  totalQuestions: number;
-  overallBand: number;
-  skillResults: Record<PlacementSkillKey, PlacementSkillResult>;
-  weakSkills: PlacementSkillKey[];
-  strongSkills: PlacementSkillKey[];
-};
 
 export const placementSkillLabels: Record<PlacementSkillKey, string> = {
   listening: 'Listening',
@@ -37,354 +9,340 @@ export const placementSkillLabels: Record<PlacementSkillKey, string> = {
   speaking: 'Speaking',
 };
 
-export const placementQuestions: PlacementQuestion[] = [
-  {
-    id: 'r1',
-    skill: 'reading',
-    prompt:
-      'Passage: Many city planners now argue that adding bike lanes improves traffic flow because short car trips are replaced by cycling. What is the main idea?',
-    options: [
-      { id: 'a', text: 'Bike lanes always increase traffic jams.' },
-      { id: 'b', text: 'Bike lanes can reduce congestion by replacing short car trips.' },
-      { id: 'c', text: 'City planners should ban private cars immediately.' },
-      { id: 'd', text: 'Cycling is only useful in small towns.' },
-    ],
-    correctOptionId: 'b',
-    explanation: 'The sentence states that replacing short car trips with cycling improves flow.',
-  },
-  {
-    id: 'r2',
-    skill: 'reading',
-    prompt:
-      'In IELTS reading, what is the fastest strategy to answer a heading-matching task?',
-    options: [
-      { id: 'a', text: 'Read every line slowly before looking at headings.' },
-      { id: 'b', text: 'Scan key nouns and topic sentences in each paragraph first.' },
-      { id: 'c', text: 'Choose headings by sentence length.' },
-      { id: 'd', text: 'Ignore repeated key words.' },
-    ],
-    correctOptionId: 'b',
-    explanation: 'Heading matching is usually solved by skimming topic sentences and key terms quickly.',
-  },
-  {
-    id: 'r3',
-    skill: 'reading',
-    prompt:
-      'The report describes a "substantial" increase in online sales. Which word is closest in meaning to "substantial"?',
-    options: [
-      { id: 'a', text: 'Minor' },
-      { id: 'b', text: 'Temporary' },
-      { id: 'c', text: 'Significant' },
-      { id: 'd', text: 'Unexpected' },
-    ],
-    correctOptionId: 'c',
-    explanation: 'Substantial means large or significant in amount.',
-  },
-  {
-    id: 'r4',
-    skill: 'reading',
-    prompt:
-      'A paragraph says: "Most participants preferred online workshops, although a small group still favored face-to-face sessions." Which statement is TRUE?',
-    options: [
-      { id: 'a', text: 'Everyone preferred online workshops.' },
-      { id: 'b', text: 'A minority still preferred in-person sessions.' },
-      { id: 'c', text: 'Most participants disliked both formats.' },
-      { id: 'd', text: 'Face-to-face sessions were canceled.' },
-    ],
-    correctOptionId: 'b',
-    explanation: 'The text directly says a small group preferred face-to-face sessions.',
-  },
-  {
-    id: 'r5',
-    skill: 'reading',
-    prompt:
-      'Sentence: "The museum introduced audio guides, and this helped visitors understand complex exhibits." What does "this" refer to?',
-    options: [
-      { id: 'a', text: 'The museum building' },
-      { id: 'b', text: "The visitors' prior knowledge" },
-      { id: 'c', text: 'Introducing audio guides' },
-      { id: 'd', text: 'Complex exhibits' },
-    ],
-    correctOptionId: 'c',
-    explanation: 'The pronoun refers to the action immediately before it: introducing audio guides.',
-  },
-  {
-    id: 'l1',
-    skill: 'listening',
-    prompt:
-      'You hear: "The workshop starts at 9:30, but registration opens at 9:00." What time should attendees arrive to register?',
-    options: [
-      { id: 'a', text: '8:30' },
-      { id: 'b', text: '9:00' },
-      { id: 'c', text: '9:30' },
-      { id: 'd', text: '10:00' },
-    ],
-    correctOptionId: 'b',
-    explanation: 'Registration opens at 9:00, so that is the key detail.',
-  },
-  {
-    id: 'l2',
-    skill: 'listening',
-    prompt:
-      'You hear: "We wanted to launch in May, however supply issues delayed us until June." When was the launch?',
-    options: [
-      { id: 'a', text: 'April' },
-      { id: 'b', text: 'May' },
-      { id: 'c', text: 'June' },
-      { id: 'd', text: 'July' },
-    ],
-    correctOptionId: 'c',
-    explanation: 'The second clause corrects the initial plan: delayed until June.',
-  },
-  {
-    id: 'l3',
-    skill: 'listening',
-    prompt:
-      'You hear: "Could you send me the revised draft by Thursday evening?" What is requested?',
-    options: [
-      { id: 'a', text: 'A meeting on Thursday morning' },
-      { id: 'b', text: 'A revised draft before Thursday evening' },
-      { id: 'c', text: 'A final report next week' },
-      { id: 'd', text: 'A phone call tonight' },
-    ],
-    correctOptionId: 'b',
-    explanation: 'The speaker asks for the revised draft by Thursday evening.',
-  },
-  {
-    id: 'l4',
-    skill: 'listening',
-    prompt:
-      'You hear: "The north gate is closed for maintenance, so please use the east entrance." Which entrance should you use?',
-    options: [
-      { id: 'a', text: 'North entrance' },
-      { id: 'b', text: 'West entrance' },
-      { id: 'c', text: 'Main hall' },
-      { id: 'd', text: 'East entrance' },
-    ],
-    correctOptionId: 'd',
-    explanation: 'The speaker gives a clear instruction to use the east entrance.',
-  },
-  {
-    id: 'l5',
-    skill: 'listening',
-    prompt:
-      'You hear: "The tutor says pronunciation matters, but fluency and idea development carry more weight overall." Which is most important overall?',
-    options: [
-      { id: 'a', text: 'Pronunciation only' },
-      { id: 'b', text: 'Fluency and idea development' },
-      { id: 'c', text: 'Vocabulary only' },
-      { id: 'd', text: 'Speed of speaking only' },
-    ],
-    correctOptionId: 'b',
-    explanation: 'The phrase "carry more weight overall" identifies the main priority.',
-  },
-  {
-    id: 'w1',
-    skill: 'writing',
-    prompt:
-      'Choose the best thesis sentence for IELTS Writing Task 2 (agree/disagree).',
-    options: [
-      { id: 'a', text: 'This essay is about many things in modern society.' },
-      { id: 'b', text: 'I totally agree because technology improves access to education, but this depends on equal internet access.' },
-      { id: 'c', text: 'People have different opinions and it is complicated.' },
-      { id: 'd', text: 'In conclusion, there are pros and cons.' },
-    ],
-    correctOptionId: 'b',
-    explanation: 'A strong thesis states position clearly and previews key reasoning.',
-  },
-  {
-    id: 'w2',
-    skill: 'writing',
-    prompt:
-      'Which sentence is the most formal and suitable for IELTS Writing?',
-    options: [
-      { id: 'a', text: 'Kids these days are kinda addicted to phones.' },
-      { id: 'b', text: 'It is evident that excessive smartphone use can reduce attention span among adolescents.' },
-      { id: 'c', text: 'Phones are super bad, you know.' },
-      { id: 'd', text: 'I think phones are a big problem lol.' },
-    ],
-    correctOptionId: 'b',
-    explanation: 'Option B uses formal register and precise academic wording.',
-  },
-  {
-    id: 'w3',
-    skill: 'writing',
-    prompt:
-      'Which connector best adds a contrasting idea in academic writing?',
-    options: [
-      { id: 'a', text: 'Moreover' },
-      { id: 'b', text: 'For example' },
-      { id: 'c', text: 'However' },
-      { id: 'd', text: 'Therefore' },
-    ],
-    correctOptionId: 'c',
-    explanation: '"However" is the common transition marker for contrast.',
-  },
-  {
-    id: 'w4',
-    skill: 'writing',
-    prompt:
-      'Pick the grammatically correct sentence.',
-    options: [
-      { id: 'a', text: 'The number of students are increasing rapidly.' },
-      { id: 'b', text: 'The number of students is increasing rapidly.' },
-      { id: 'c', text: 'The number of students increase rapidly.' },
-      { id: 'd', text: 'The number of students have increased rapidly.' },
-    ],
-    correctOptionId: 'b',
-    explanation: 'The subject "number" is singular, so it takes "is".',
-  },
-  {
-    id: 'w5',
-    skill: 'writing',
-    prompt:
-      'For Task 1 line graph, which opening is best?',
-    options: [
-      { id: 'a', text: 'The graph gives some information, and I will describe it now.' },
-      { id: 'b', text: 'The line graph illustrates changes in annual train usage in three cities from 2000 to 2020.' },
-      { id: 'c', text: 'People in cities like trains a lot.' },
-      { id: 'd', text: 'This chart is very interesting and important for everyone.' },
-    ],
-    correctOptionId: 'b',
-    explanation: 'A good opening paraphrases chart type, metric, scope, and time period clearly.',
-  },
-  {
-    id: 's1',
-    skill: 'speaking',
-    prompt:
-      'In IELTS Speaking Part 1, which response is strongest?',
-    options: [
-      { id: 'a', text: 'Yes.' },
-      { id: 'b', text: 'I like reading because it helps me relax after work, especially short biographies.' },
-      { id: 'c', text: 'Reading. Next question.' },
-      { id: 'd', text: 'I do not know maybe.' },
-    ],
-    correctOptionId: 'b',
-    explanation: 'The best answer extends naturally with reason and example.',
-  },
-  {
-    id: 's2',
-    skill: 'speaking',
-    prompt:
-      'How can you improve coherence in Speaking Part 2?',
-    options: [
-      { id: 'a', text: 'Use no structure and talk randomly.' },
-      { id: 'b', text: 'Use a simple structure: context, main event, reflection.' },
-      { id: 'c', text: 'Memorize one answer for all topics.' },
-      { id: 'd', text: 'Only list vocabulary words.' },
-    ],
-    correctOptionId: 'b',
-    explanation: 'A clear story framework improves fluency and coherence.',
-  },
-  {
-    id: 's3',
-    skill: 'speaking',
-    prompt:
-      'Which phrase gives a balanced opinion in Part 3?',
-    options: [
-      { id: 'a', text: 'It is always true in every case.' },
-      { id: 'b', text: 'I have no idea.' },
-      { id: 'c', text: 'In many cases this is beneficial, although it can create inequality in rural areas.' },
-      { id: 'd', text: 'That is all.' },
-    ],
-    correctOptionId: 'c',
-    explanation: 'Balanced responses with nuance are typical of higher band performance.',
-  },
-  {
-    id: 's4',
-    skill: 'speaking',
-    prompt:
-      'Which answer best demonstrates lexical flexibility?',
-    options: [
-      { id: 'a', text: 'The city is good, good, and very good.' },
-      { id: 'b', text: 'The city is vibrant, well-connected, and culturally diverse.' },
-      { id: 'c', text: 'The city is okay.' },
-      { id: 'd', text: 'The city is like city.' },
-    ],
-    correctOptionId: 'b',
-    explanation: 'Option B uses precise and varied vocabulary naturally.',
-  },
-  {
-    id: 's5',
-    skill: 'speaking',
-    prompt:
-      'What should you do if you need one second to think during speaking?',
-    options: [
-      { id: 'a', text: 'Stay silent for 10 seconds.' },
-      { id: 'b', text: 'Use a filler naturally, then continue with a clear point.' },
-      { id: 'c', text: 'Switch to your first language.' },
-      { id: 'd', text: 'End your answer immediately.' },
-    ],
-    correctOptionId: 'b',
-    explanation: 'Short natural fillers are acceptable if fluency is maintained.',
-  },
-];
+export const skillKeys = ['listening', 'reading', 'writing', 'speaking'] as const;
+
+const bandSchema = z.coerce.number().min(0).max(9);
+const targetBandSchema = z.coerce.number().min(4).max(9);
+
+export const DiagnosticSurveySchema = z.object({
+  currentOverallBand: bandSchema,
+  targetOverallBand: targetBandSchema,
+  targetDate: z.string().trim().max(40).optional().nullable(),
+  weeklyStudyHours: z.coerce.number().int().min(1).max(60),
+  skillBands: z.object({
+    listening: bandSchema,
+    reading: bandSchema,
+    writing: bandSchema,
+    speaking: bandSchema,
+  }),
+  targetSkillBands: z.object({
+    listening: targetBandSchema,
+    reading: targetBandSchema,
+    writing: targetBandSchema,
+    speaking: targetBandSchema,
+  }),
+  preferences: z.object({
+    readingTopics: z.string().trim().min(2).max(300),
+    writingTask1Comfort: z.string().trim().min(2).max(300),
+    writingTask2Interests: z.string().trim().min(2).max(300),
+    listeningAudioInterests: z.string().trim().min(2).max(300),
+    speakingTopics: z.string().trim().min(2).max(300),
+  }),
+});
+
+export type DiagnosticSurvey = z.infer<typeof DiagnosticSurveySchema>;
+
+const DiagnosticQuestionTypeSchema = z.enum([
+  'MCQ',
+  'TRUE_FALSE_NOT_GIVEN',
+  'MATCHING',
+  'SUMMARY_COMPLETION',
+]);
+
+export type DiagnosticQuestionType = z.infer<typeof DiagnosticQuestionTypeSchema>;
+
+const GeneratedReadingQuestionSchema = z.object({
+  id: z.string().trim().min(1).max(30),
+  type: DiagnosticQuestionTypeSchema,
+  prompt: z.string().trim().min(10).max(1200),
+  options: z.array(
+    z.object({
+      id: z.string().trim().min(1).max(10),
+      text: z.string().trim().min(1).max(400),
+    })
+  ).min(2).max(8),
+  correctOptionId: z.string().trim().min(1).max(10),
+  explanation: z.string().trim().min(10).max(1000),
+  skillFocus: z.string().trim().min(2).max(120).optional(),
+}).superRefine((question, ctx) => {
+  if (!question.options.some((option) => option.id === question.correctOptionId)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['correctOptionId'],
+      message: 'correctOptionId must match one of the options.',
+    });
+  }
+});
+
+export const GeneratedDiagnosticTestSchema = z.object({
+  ieltsType: z.literal('ACADEMIC'),
+  levelRationale: z.string().trim().min(20).max(1500),
+  reading: z.object({
+    title: z.string().trim().min(5).max(160),
+    bandTarget: z.coerce.number().min(4).max(9),
+    passage: z.string().trim().min(2500).max(6500),
+    questions: z.array(GeneratedReadingQuestionSchema).min(10).max(14),
+  }),
+  writing: z.object({
+    task1: z.object({
+      prompt: z.string().trim().min(50).max(1800),
+      visualDescription: z.string().trim().min(20).max(1200),
+      rubricFocus: z.array(z.string().trim().min(2).max(120)).min(2).max(6),
+    }),
+    task2: z.object({
+      prompt: z.string().trim().min(50).max(1200),
+      questionType: z.string().trim().min(3).max(80),
+      rubricFocus: z.array(z.string().trim().min(2).max(120)).min(2).max(6),
+    }),
+  }),
+  hiddenAnswerKey: z.array(
+    z.object({
+      questionId: z.string().trim().min(1).max(30),
+      correctOptionId: z.string().trim().min(1).max(10),
+      explanation: z.string().trim().min(10).max(1000),
+    })
+  ).min(10).max(14),
+  bandCalibrationNotes: z.array(z.string().trim().min(10).max(300)).min(2).max(8),
+}).superRefine((test, ctx) => {
+  const questionIds = new Set(test.reading.questions.map((question) => question.id));
+  const keyIds = new Set(test.hiddenAnswerKey.map((item) => item.questionId));
+
+  for (const question of test.reading.questions) {
+    if (!keyIds.has(question.id)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['hiddenAnswerKey'],
+        message: `Missing answer key for question ${question.id}.`,
+      });
+    }
+  }
+
+  for (const answer of test.hiddenAnswerKey) {
+    if (!questionIds.has(answer.questionId)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['hiddenAnswerKey'],
+        message: `Answer key references unknown question ${answer.questionId}.`,
+      });
+    }
+  }
+
+  const typeSet = new Set(test.reading.questions.map((question) => question.type));
+  for (const requiredType of ['MCQ', 'TRUE_FALSE_NOT_GIVEN'] as const) {
+    if (!typeSet.has(requiredType)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['reading', 'questions'],
+        message: `Reading test must include ${requiredType} questions.`,
+      });
+    }
+  }
+
+  if (!typeSet.has('MATCHING') && !typeSet.has('SUMMARY_COMPLETION')) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['reading', 'questions'],
+      message: 'Reading test must include matching or summary completion questions.',
+    });
+  }
+});
+
+export type GeneratedDiagnosticTest = z.infer<typeof GeneratedDiagnosticTestSchema>;
+
+export type PublicGeneratedDiagnosticTest = Omit<GeneratedDiagnosticTest, 'hiddenAnswerKey' | 'reading'> & {
+  reading: Omit<GeneratedDiagnosticTest['reading'], 'questions'> & {
+    questions: Array<Omit<GeneratedDiagnosticTest['reading']['questions'][number], 'correctOptionId' | 'explanation'>>;
+  };
+};
+
+export function toPublicDiagnosticTest(test: GeneratedDiagnosticTest): PublicGeneratedDiagnosticTest {
+  return {
+    ieltsType: test.ieltsType,
+    levelRationale: test.levelRationale,
+    reading: {
+      title: test.reading.title,
+      bandTarget: test.reading.bandTarget,
+      passage: test.reading.passage,
+      questions: test.reading.questions.map((question) => ({
+        id: question.id,
+        type: question.type,
+        prompt: question.prompt,
+        options: question.options,
+        skillFocus: question.skillFocus,
+      })),
+    },
+    writing: test.writing,
+    bandCalibrationNotes: test.bandCalibrationNotes,
+  };
+}
+
+export const DiagnosticSubmissionSchema = z.object({
+  attemptId: z.string().trim().min(1),
+  readingAnswers: z.record(z.string().trim().min(1)),
+  writing: z.object({
+    task1: z.string().trim().min(80).max(6000),
+    task2: z.string().trim().min(120).max(8000),
+  }),
+});
+
+export type DiagnosticSubmission = z.infer<typeof DiagnosticSubmissionSchema>;
+
+export type PlacementSkillResult = {
+  skill: PlacementSkillKey;
+  correct: number;
+  total: number;
+  band: number;
+};
+
+export type DiagnosticSkillScores = {
+  reading: PlacementSkillResult & {
+    accuracyPercent: number;
+    weakQuestionTypes: DiagnosticQuestionType[];
+  };
+  writing: {
+    skill: 'writing';
+    band: number;
+    task1Band: number;
+    task2Band: number;
+    criteria: {
+      taskAchievement: number;
+      coherenceCohesion: number;
+      lexicalResource: number;
+      grammarRangeAccuracy: number;
+    };
+    weakestCriteria: string[];
+  };
+  listening: {
+    skill: 'listening';
+    band: number;
+    surveyOnly: true;
+  };
+  speaking: {
+    skill: 'speaking';
+    band: number;
+    surveyOnly: true;
+  };
+};
+
+export type PlacementResult = {
+  totalCorrect: number;
+  totalQuestions: number;
+  overallBand: number;
+  skillResults: Record<PlacementSkillKey, { skill: PlacementSkillKey; band: number; correct?: number; total?: number }>;
+  weakSkills: PlacementSkillKey[];
+  strongSkills: PlacementSkillKey[];
+};
 
 function roundToHalf(value: number): number {
   return Math.round(value * 2) / 2;
 }
 
-function scoreToBand(correct: number, total: number): number {
+export function clampBand(value: number, min = 3.5, max = 9): number {
+  if (!Number.isFinite(value)) {
+    return min;
+  }
+
+  return roundToHalf(Math.max(min, Math.min(max, value)));
+}
+
+export function scoreReadingBand(correct: number, total: number): number {
   if (total <= 0) {
     return 3.5;
   }
 
   const ratio = correct / total;
-  const rawBand = 3.5 + ratio * 4.5;
-  const clampedBand = Math.max(3.5, Math.min(rawBand, 8.0));
+  const rawBand = 3.5 + ratio * 5.5;
 
-  return roundToHalf(clampedBand);
+  return clampBand(rawBand, 3.5, 9);
 }
 
-export function evaluatePlacementAnswers(
+export function evaluateReadingAnswers(
+  test: GeneratedDiagnosticTest,
   answers: Record<string, string | undefined>
-): PlacementResult {
-  const skillKeys: PlacementSkillKey[] = ['listening', 'reading', 'writing', 'speaking'];
-  const bySkill: Record<PlacementSkillKey, PlacementQuestion[]> = {
-    listening: placementQuestions.filter((question) => question.skill === 'listening'),
-    reading: placementQuestions.filter((question) => question.skill === 'reading'),
-    writing: placementQuestions.filter((question) => question.skill === 'writing'),
-    speaking: placementQuestions.filter((question) => question.skill === 'speaking'),
-  };
+) {
+  const answerMap = new Map(test.hiddenAnswerKey.map((item) => [item.questionId, item.correctOptionId]));
+  const questionById = new Map(test.reading.questions.map((question) => [question.id, question]));
 
-  const skillResults = skillKeys.reduce<Record<PlacementSkillKey, PlacementSkillResult>>((acc, skill) => {
-    const questions = bySkill[skill];
-    const correct = questions.reduce((count, question) => {
-      return count + (answers[question.id] === question.correctOptionId ? 1 : 0);
-    }, 0);
+  const details = test.reading.questions.map((question) => {
+    const selectedOptionId = answers[question.id] || '';
+    const correctOptionId = answerMap.get(question.id) || question.correctOptionId;
+    const isCorrect = selectedOptionId === correctOptionId;
 
-    acc[skill] = {
-      skill,
-      correct,
-      total: questions.length,
-      band: scoreToBand(correct, questions.length),
+    return {
+      questionId: question.id,
+      type: question.type,
+      prompt: question.prompt,
+      selectedOptionId,
+      correctOptionId,
+      isCorrect,
+      explanation: question.explanation,
     };
-
-    return acc;
-  }, {
-    listening: { skill: 'listening', correct: 0, total: 0, band: 3.5 },
-    reading: { skill: 'reading', correct: 0, total: 0, band: 3.5 },
-    writing: { skill: 'writing', correct: 0, total: 0, band: 3.5 },
-    speaking: { skill: 'speaking', correct: 0, total: 0, band: 3.5 },
   });
 
-  const totalCorrect = placementQuestions.reduce((count, question) => {
-    return count + (answers[question.id] === question.correctOptionId ? 1 : 0);
-  }, 0);
+  const correct = details.filter((item) => item.isCorrect).length;
+  const total = test.reading.questions.length;
+  const missesByType = new Map<DiagnosticQuestionType, number>();
 
-  const totalQuestions = placementQuestions.length;
-  const overallBand = roundToHalf(
-    skillKeys.reduce((sum, skill) => sum + skillResults[skill].band, 0) / skillKeys.length
-  );
+  for (const item of details) {
+    if (!item.isCorrect) {
+      const question = questionById.get(item.questionId);
+      if (question) {
+        missesByType.set(question.type, (missesByType.get(question.type) || 0) + 1);
+      }
+    }
+  }
 
-  const sortedSkills = [...skillKeys].sort((a, b) => skillResults[a].band - skillResults[b].band);
+  const weakQuestionTypes = [...missesByType.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 2)
+    .map(([type]) => type);
 
   return {
-    totalCorrect,
-    totalQuestions,
+    correct,
+    total,
+    band: scoreReadingBand(correct, total),
+    accuracyPercent: total === 0 ? 0 : Math.round((correct / total) * 100),
+    weakQuestionTypes,
+    details,
+  };
+}
+
+export function buildPlacementResultFromScores(scores: DiagnosticSkillScores): PlacementResult {
+  const skillResults = {
+    listening: {
+      skill: 'listening' as const,
+      band: scores.listening.band,
+    },
+    reading: {
+      skill: 'reading' as const,
+      correct: scores.reading.correct,
+      total: scores.reading.total,
+      band: scores.reading.band,
+    },
+    writing: {
+      skill: 'writing' as const,
+      band: scores.writing.band,
+    },
+    speaking: {
+      skill: 'speaking' as const,
+      band: scores.speaking.band,
+    },
+  };
+
+  const overallBand = clampBand((scores.reading.band + scores.writing.band) / 2, 3.5, 9);
+  const scoredSkills: PlacementSkillKey[] = ['reading', 'writing'];
+  const sortedScoredSkills = [...scoredSkills].sort((a, b) => skillResults[a].band - skillResults[b].band);
+
+  return {
+    totalCorrect: scores.reading.correct,
+    totalQuestions: scores.reading.total,
     overallBand,
     skillResults,
-    weakSkills: sortedSkills.slice(0, 2),
-    strongSkills: [...sortedSkills].reverse().slice(0, 2),
+    weakSkills: sortedScoredSkills.slice(0, 2),
+    strongSkills: [...sortedScoredSkills].reverse().slice(0, 2),
   };
+}
+
+export function countWords(value: string): number {
+  return value.trim().split(/\s+/).filter(Boolean).length;
 }

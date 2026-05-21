@@ -39,6 +39,14 @@ const PersonalizedRoadmapInputSchema = z.object({
     .describe(
       'A description of the user skills and areas that need improvement in IELTS.'
     ),
+  diagnosticScope: z
+    .string()
+    .optional()
+    .describe('Scope note for the diagnostic, including which skills are scored vs survey-only.'),
+  diagnosticEvidence: z
+    .string()
+    .optional()
+    .describe('Detailed diagnostic evidence such as survey, reading question type weaknesses, and writing rubric feedback.'),
   studyMaterialsPreference: z
     .string()
     .describe(
@@ -94,10 +102,14 @@ const prompt = ai.definePrompt({
 
   Based on this diagnostic result, target band score {{targetBandScore}}, available study time of {{availableTimePerWeek}} hours per week, identified skill gaps: {{skillGaps}}, and preferred study materials: {{studyMaterialsPreference}}, generate a personalized study plan.
 
+  Diagnostic scope: {{diagnosticScope}}
+  Diagnostic evidence: {{diagnosticEvidence}}
+
   The study plan should include:
   - An estimated timeline for achieving the target band score.
-  - A detailed weekly study plan with specific tasks and materials for each skill (Listening, Reading, Writing, Speaking).
+  - A detailed weekly study plan with specific tasks and materials for Reading and Writing first.
   - A list of suggested study materials and resources tailored to the user.
+  - Do not create mandatory Listening or Speaking tasks when those skills are survey-only.
 
   Ensure the study plan is realistic and achievable given the user's constraints and preferences.
 

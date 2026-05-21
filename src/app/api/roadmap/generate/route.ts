@@ -66,6 +66,7 @@ export async function POST(req: Request) {
         speakingBand: true,
         weakSkills: true,
         expiresAt: true,
+        rawAnswers: true,
       },
     });
 
@@ -99,6 +100,7 @@ export async function POST(req: Request) {
       weakSkills,
       targetBandScore: payload.targetBandScore,
       availableTimePerWeek: payload.availableTimePerWeek,
+      mode: 'READING_WRITING_V1',
     });
 
     const skillGaps = blueprint.skillGapsSummary;
@@ -117,6 +119,12 @@ export async function POST(req: Request) {
         targetBandScore: payload.targetBandScore,
         availableTimePerWeek: payload.availableTimePerWeek,
         skillGaps,
+        diagnosticScope:
+          'AI Diagnostic V1 scored Reading and Writing only. Listening and Speaking are survey-only placeholders and must not drive roadmap tasks yet.',
+        diagnosticEvidence:
+          typeof latestDiagnostic.rawAnswers === 'object' && latestDiagnostic.rawAnswers
+            ? JSON.stringify(latestDiagnostic.rawAnswers).slice(0, 6000)
+            : 'No detailed diagnostic evidence available.',
         studyMaterialsPreference: payload.studyMaterialsPreference || 'No specific preference',
       });
     } catch (error) {

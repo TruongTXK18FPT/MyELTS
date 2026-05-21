@@ -8,7 +8,7 @@ const testTypes = [
   {
     icon: <Files className="h-8 w-8 text-primary" />,
     title: 'Diagnostic Placement',
-    description: 'Bai test dau vao 20 cau de uoc tinh band hien tai va tao roadmap tu dong.',
+    description: 'Khao sat ngan, tao de AI Reading/Writing va uoc tinh baseline de tao roadmap.',
     href: '/tests/diagnostic',
     ctaLabel: 'Lam test dau vao',
     badgeLabel: 'Start Here',
