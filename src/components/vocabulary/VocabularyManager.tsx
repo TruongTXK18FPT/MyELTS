@@ -1,12 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PlusCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChipFilter } from '@/components/ui/ChipFilter';
-import { normalizeVocabularyCategoryKey } from '@/lib/vocabulary';
+import { normalizeVocabularyCategoryKey, normalizeVocabularyWord } from '@/lib/vocabulary';
 import {
   type PronunciationAccent,
   type VocabularyItem,
@@ -56,12 +56,34 @@ function compareTextDeterministic(a: string, b: string): number {
   return 0;
 }
 
+function sortVocabularyItems(items: VocabularyItem[], sortMode: SortMode): VocabularyItem[] {
+  return [...items].sort((a, b) => {
+    if (sortMode === 'a-z') {
+      return compareTextDeterministic(a.word, b.word);
+    }
+
+    if (sortMode === 'z-a') {
+      return compareTextDeterministic(b.word, a.word);
+    }
+
+    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+
+    if (sortMode === 'oldest') {
+      return dateA - dateB;
+    }
+
+    return dateB - dateA;
+  });
+}
+
 export function VocabularyManager({ initialVocabulary }: VocabularyManagerProps) {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('Tất cả');
   const [sortMode, setSortMode] = useState<SortMode>('newest');
   const [pronunciationAccent, setPronunciationAccent] = useState<PronunciationAccent>('en-US');
   const [currentPage, setCurrentPage] = useState(1);
+  const [highlightedVocabularyId, setHighlightedVocabularyId] = useState<string | null>(null);
 
   const categories = useMemo(() => {
     const uniqueCategories = Array.from(
@@ -69,6 +91,20 @@ export function VocabularyManager({ initialVocabulary }: VocabularyManagerProps)
     ) as string[];
 
     return ['Tất cả', ...uniqueCategories.sort(compareTextDeterministic)];
+  }, [initialVocabulary]);
+
+  const vocabularyByWord = useMemo(() => {
+    const byWord = new Map<string, VocabularyItem>();
+
+    for (const item of initialVocabulary) {
+      const key = normalizeVocabularyWord(item.word);
+
+      if (key && !byWord.has(key)) {
+        byWord.set(key, item);
+      }
+    }
+
+    return byWord;
   }, [initialVocabulary]);
 
   const filteredVocabulary = useMemo(() => {
@@ -101,24 +137,7 @@ export function VocabularyManager({ initialVocabulary }: VocabularyManagerProps)
       return matchCategory && blob.includes(q);
     });
 
-    return filtered.sort((a, b) => {
-      if (sortMode === 'a-z') {
-        return compareTextDeterministic(a.word, b.word);
-      }
-
-      if (sortMode === 'z-a') {
-        return compareTextDeterministic(b.word, a.word);
-      }
-
-      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-
-      if (sortMode === 'oldest') {
-        return dateA - dateB;
-      }
-
-      return dateB - dateA;
-    });
+    return sortVocabularyItems(filtered, sortMode);
   }, [activeCategory, initialVocabulary, search, sortMode]);
 
   const totalPages = Math.max(1, Math.ceil(filteredVocabulary.length / ITEMS_PER_PAGE));
@@ -136,6 +155,27 @@ export function VocabularyManager({ initialVocabulary }: VocabularyManagerProps)
   const currentPageSafe = Math.min(currentPage, totalPages);
   const startIndex = (currentPageSafe - 1) * ITEMS_PER_PAGE;
   const paginatedVocabulary = filteredVocabulary.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  const openVocabularyItem = useCallback(
+    (targetId: string) => {
+      const sortedVocabulary = sortVocabularyItems(initialVocabulary, sortMode);
+      const targetIndex = sortedVocabulary.findIndex((item) => item.id === targetId);
+
+      if (targetIndex < 0) {
+        return;
+      }
+
+      setSearch('');
+      setActiveCategory('Tất cả');
+      setCurrentPage(Math.floor(targetIndex / ITEMS_PER_PAGE) + 1);
+      setHighlightedVocabularyId(null);
+
+      window.setTimeout(() => {
+        setHighlightedVocabularyId(targetId);
+      }, 0);
+    },
+    [initialVocabulary, sortMode]
+  );
 
   return (
     <div className="space-y-6">
@@ -207,6 +247,9 @@ export function VocabularyManager({ initialVocabulary }: VocabularyManagerProps)
         vocabulary={paginatedVocabulary}
         manageBasePath="/vocabulary/manage"
         pronunciationSettings={{ accent: pronunciationAccent }}
+        vocabularyByWord={vocabularyByWord}
+        onOpenVocabularyItem={openVocabularyItem}
+        highlightedVocabularyId={highlightedVocabularyId}
       />
 
       {filteredVocabulary.length > 0 ? (

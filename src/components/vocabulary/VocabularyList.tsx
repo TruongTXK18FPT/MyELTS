@@ -1,13 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { extractVocabularyFamilyMeta } from '@/lib/vocabulary-family';
 import { normalizeVocabularyWord } from '@/lib/vocabulary';
-import { Bookmark, Pencil, Sparkles, Volume2 } from 'lucide-react';
+import { ArrowUpRight, Bookmark, Pencil, Sparkles, Volume2 } from 'lucide-react';
 
 export type PronunciationAccent = 'en-US' | 'en-GB';
 
@@ -40,6 +40,9 @@ type VocabularyListProps = {
   vocabulary: VocabularyItem[];
   manageBasePath?: string;
   pronunciationSettings?: PronunciationSettings;
+  vocabularyByWord?: Map<string, VocabularyItem>;
+  onOpenVocabularyItem?: (targetId: string) => void;
+  highlightedVocabularyId?: string | null;
 };
 
 type ExtraDetail = {
@@ -324,13 +327,109 @@ function renderWithHighlight(text: string, keyword: string) {
   });
 }
 
+function splitRelationTerms(value: string): string[] {
+  const seen = new Set<string>();
+  const terms: string[] = [];
+
+  for (const term of value.split(/[,\n;|/]+/)) {
+    const trimmed = term.trim();
+    const key = normalizeVocabularyWord(trimmed);
+
+    if (!key || seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    terms.push(trimmed);
+  }
+
+  return terms;
+}
+
+function RelationChips({
+  text,
+  vocabularyByWord,
+  onOpenVocabularyItem,
+}: {
+  text: string;
+  vocabularyByWord?: Map<string, VocabularyItem>;
+  onOpenVocabularyItem?: (targetId: string) => void;
+}) {
+  const terms = splitRelationTerms(text);
+
+  if (terms.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {terms.map((term) => {
+        const linkedItem = vocabularyByWord?.get(normalizeVocabularyWord(term));
+
+        if (linkedItem && onOpenVocabularyItem) {
+          return (
+            <button
+              key={term}
+              type="button"
+              onClick={() => onOpenVocabularyItem(linkedItem.id)}
+              className="inline-flex max-w-full items-center gap-1 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary-dark transition-colors hover:border-primary/50 hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              title={`Mở nhanh ${linkedItem.word}`}
+            >
+              <span className="truncate">{term}</span>
+              <ArrowUpRight className="h-3.5 w-3.5 shrink-0" />
+            </button>
+          );
+        }
+
+        return (
+          <span
+            key={term}
+            className="inline-flex max-w-full rounded-full border border-muted bg-muted/40 px-2.5 py-1 text-xs font-semibold text-text-muted"
+          >
+            <span className="truncate">{term}</span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 export function VocabularyList({
   vocabulary,
   manageBasePath = '/vocabulary/manage',
   pronunciationSettings = defaultPronunciationSettings,
+  vocabularyByWord,
+  onOpenVocabularyItem,
+  highlightedVocabularyId,
 }: VocabularyListProps) {
   const [speakingId, setSpeakingId] = useState<string | null>(null);
   const [activeVariantByCard, setActiveVariantByCard] = useState<Record<string, string>>({});
+  const [visibleHighlightId, setVisibleHighlightId] = useState<string | null>(null);
+  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  useEffect(() => {
+    if (!highlightedVocabularyId) {
+      return;
+    }
+
+    setVisibleHighlightId(highlightedVocabularyId);
+
+    const frameId = window.requestAnimationFrame(() => {
+      cardRefs.current[highlightedVocabularyId]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    });
+
+    const timeoutId = window.setTimeout(() => {
+      setVisibleHighlightId((current) => (current === highlightedVocabularyId ? null : current));
+    }, 2200);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.clearTimeout(timeoutId);
+    };
+  }, [highlightedVocabularyId]);
 
   const speakWord = (item: VocabularyItem, wordOverride?: string) => {
     if (typeof window === 'undefined' || !window.speechSynthesis) {
@@ -455,7 +554,12 @@ export function VocabularyList({
         return (
           <Card
             key={item.id}
-            className="flex flex-col overflow-hidden border-primary/15 shadow-sm transition-shadow hover:shadow-md"
+            ref={(node) => {
+              cardRefs.current[item.id] = node;
+            }}
+            className={`flex flex-col overflow-hidden border-primary/15 shadow-sm transition-all hover:shadow-md ${
+              visibleHighlightId === item.id ? 'ring-2 ring-primary/50 ring-offset-2 ring-offset-background' : ''
+            }`}
           >
             {item.image ? (
               <div className="h-56 w-full bg-secondary/30 p-3 md:h-60">
@@ -545,9 +649,25 @@ export function VocabularyList({
 
               {usageContext ? <DetailBox label="Ngữ cảnh">{renderWithHighlight(usageContext, displayWord)}</DetailBox> : null}
 
-              {synonym ? <DetailBox label="Đồng nghĩa">{renderWithHighlight(synonym, displayWord)}</DetailBox> : null}
+              {synonym ? (
+                <DetailBox label="Đồng nghĩa">
+                  <RelationChips
+                    text={synonym}
+                    vocabularyByWord={vocabularyByWord}
+                    onOpenVocabularyItem={onOpenVocabularyItem}
+                  />
+                </DetailBox>
+              ) : null}
 
-              {antonym ? <DetailBox label="Trái nghĩa">{renderWithHighlight(antonym, displayWord)}</DetailBox> : null}
+              {antonym ? (
+                <DetailBox label="Trái nghĩa">
+                  <RelationChips
+                    text={antonym}
+                    vocabularyByWord={vocabularyByWord}
+                    onOpenVocabularyItem={onOpenVocabularyItem}
+                  />
+                </DetailBox>
+              ) : null}
 
               {(singularForm || pluralForm) && (
                 <DetailBox label="Biến thể danh từ">
