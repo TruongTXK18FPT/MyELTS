@@ -25,13 +25,15 @@ const ToastViewport = React.forwardRef<
 ToastViewport.displayName = ToastPrimitives.Viewport.displayName
 
 const toastVariants = cva(
-  "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border p-6 pr-8 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full",
+  "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-2xl border p-4 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full duration-300 hover:shadow-xl",
   {
     variants: {
       variant: {
-        default: "border bg-background text-foreground",
-        destructive:
-          "destructive group border-destructive bg-destructive text-destructive-foreground",
+        default: "border-pink-200 bg-white/95 text-pink-950 backdrop-blur-sm shadow-[0_8px_30px_rgba(244,143,177,0.12)] dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-100",
+        destructive: "border-red-200 bg-red-50/95 text-red-950 shadow-[0_8px_30px_rgba(239,68,68,0.12)] dark:bg-red-950/20 dark:border-red-900/50 dark:text-red-200",
+        success: "border-green-200 bg-green-50/95 text-green-950 shadow-[0_8px_30px_rgba(74,222,128,0.12)] dark:bg-green-950/20 dark:border-green-900/50 dark:text-green-200",
+        warning: "border-amber-200 bg-amber-50/95 text-amber-950 shadow-[0_8px_30px_rgba(245,158,11,0.12)] dark:bg-amber-950/20 dark:border-amber-900/50 dark:text-amber-200",
+        info: "border-blue-200 bg-blue-50/95 text-blue-950 shadow-[0_8px_30px_rgba(59,130,246,0.12)] dark:bg-blue-950/20 dark:border-blue-900/50 dark:text-blue-200",
       },
     },
     defaultVariants: {

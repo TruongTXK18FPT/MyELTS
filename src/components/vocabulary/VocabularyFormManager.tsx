@@ -22,6 +22,7 @@ import { ChipFilter } from '@/components/ui/ChipFilter';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 import {
   deriveVocabularyFamilyKey,
   extractVocabularyFamilyMeta,
@@ -345,6 +346,7 @@ function mapItemFromApi(created: any): VocabularyItem {
 
 export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManagerProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const selectedIdFromQuery = searchParams.get('id');
@@ -635,12 +637,20 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
 
   const onAIAutofill = async () => {
     if (!session?.user) {
-      setStatus({ type: 'error', message: 'Vui lòng đăng nhập để sử dụng tính năng AI.' });
+      toast({
+        title: 'Chưa đăng nhập 🥺',
+        description: 'Vui lòng đăng nhập để sử dụng tính năng AI.',
+        variant: 'destructive',
+      });
       return;
     }
 
     if (!lookupInput.trim()) {
-      setStatus({ type: 'error', message: 'Nhập từ khóa tiếng Việt hoặc tiếng Anh để AI điền tự động.' });
+      toast({
+        title: 'Thiếu thông tin 🌸',
+        description: 'Nhập từ khóa tiếng Việt hoặc tiếng Anh để AI điền tự động.',
+        variant: 'warning',
+      });
       return;
     }
 
@@ -696,13 +706,18 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
       setWordFamilyKey(aiFamilyKey);
 
       applyDraftToForm(draft);
-      setStatus({
-        type: 'success',
-        message: `AI đã điền từ "${draft.word}" cùng ${dedupedFamilyDrafts.length} biến thể liên quan chuẩn IELTS.`,
+      toast({
+        title: 'AI hoàn tất điền từ 🌸',
+        description: `Đã điền từ "${draft.word}" cùng ${dedupedFamilyDrafts.length} biến thể liên quan chuẩn IELTS.`,
+        variant: 'success',
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Đã xảy ra lỗi không xác định.';
-      setStatus({ type: 'error', message });
+      toast({
+        title: 'Thao tác thất bại 🥺',
+        description: message,
+        variant: 'destructive',
+      });
     } finally {
       setAiMode(null);
     }
@@ -716,14 +731,22 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
 
   const onGenerateByTopic = async () => {
     if (!session?.user) {
-      setStatus({ type: 'error', message: 'Vui lòng đăng nhập để sử dụng tính năng AI.' });
+      toast({
+        title: 'Chưa đăng nhập 🥺',
+        description: 'Vui lòng đăng nhập để sử dụng tính năng AI.',
+        variant: 'destructive',
+      });
       return;
     }
 
     const selectedTopic = getResolvedAITopic();
 
     if (!selectedTopic) {
-      setStatus({ type: 'error', message: 'Nhập một chủ đề để AI tạo danh sách từ vựng.' });
+      toast({
+        title: 'Thiếu thông tin 🌸',
+        description: 'Nhập một chủ đề để AI tạo danh sách từ vựng.',
+        variant: 'warning',
+      });
       return;
     }
 
@@ -787,13 +810,18 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
               .map((option) => option.label)
               .join(', ');
       const warningSuffix = payload?.warning ? ` ${payload.warning}` : '';
-      setStatus({
-        type: 'success',
-        message: `AI đã tạo ${detailedItems.length} từ vựng theo chủ đề "${resolvedTopic || selectedTopic}" (${selectedGrammarLabels}).${warningSuffix}`,
+      toast({
+        title: 'Tạo từ vựng thành công ✨',
+        description: `AI đã tạo ${detailedItems.length} từ vựng theo chủ đề "${resolvedTopic || selectedTopic}" (${selectedGrammarLabels}).${warningSuffix}`,
+        variant: 'success',
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Đã xảy ra lỗi không xác định.';
-      setStatus({ type: 'error', message });
+      toast({
+        title: 'Thao tác thất bại 🥺',
+        description: message,
+        variant: 'destructive',
+      });
     } finally {
       setAiMode(null);
     }
@@ -878,12 +906,20 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
     event.preventDefault();
 
     if (!session?.user) {
-      setStatus({ type: 'error', message: 'Vui lòng đăng nhập để lưu từ vựng vào tài khoản.' });
+      toast({
+        title: 'Chưa đăng nhập 🥺',
+        description: 'Vui lòng đăng nhập để lưu từ vựng vào tài khoản.',
+        variant: 'destructive',
+      });
       return;
     }
 
     if (!form.word.trim()) {
-      setStatus({ type: 'error', message: 'Từ vựng không được để trống.' });
+      toast({
+        title: 'Thiếu thông tin 🌸',
+        description: 'Từ vựng không được để trống.',
+        variant: 'warning',
+      });
       return;
     }
 
@@ -933,10 +969,18 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
 
       if (editingId) {
         setVocabulary((prev) => prev.map((item) => (item.id === editingId ? savedItem : item)));
-        setStatus({ type: 'success', message: `Đã cập nhật từ "${savedItem.word}".` });
+        toast({
+          title: 'Cập nhật thành công 🎉',
+          description: `Đã cập nhật từ "${savedItem.word}".`,
+          variant: 'success',
+        });
       } else {
         setVocabulary((prev) => [savedItem, ...prev]);
-        setStatus({ type: 'success', message: `Đã thêm "${savedItem.word}" vào danh sách của bạn.` });
+        toast({
+          title: 'Đã thêm từ vựng thành công 🌸',
+          description: `Đã thêm "${savedItem.word}" vào danh sách của bạn.`,
+          variant: 'success',
+        });
       }
 
       setEditingId(savedItem.id);
@@ -947,7 +991,11 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
       setQueryId(savedItem.id);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Đã xảy ra lỗi không xác định.';
-      setStatus({ type: 'error', message });
+      toast({
+        title: 'Thao tác thất bại 🥺',
+        description: message,
+        variant: 'destructive',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -959,7 +1007,11 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
     }
 
     if (!session?.user) {
-      setStatus({ type: 'error', message: 'Vui lòng đăng nhập để xóa từ vựng.' });
+      toast({
+        title: 'Chưa đăng nhập 🥺',
+        description: 'Vui lòng đăng nhập để xóa từ vựng.',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -979,10 +1031,18 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
 
       setVocabulary((prev) => prev.filter((item) => item.id !== editingId));
       resetFormForNew();
-      setStatus({ type: 'success', message: 'Đã xóa từ vựng thành công.' });
+      toast({
+        title: 'Đã xóa thành công 🌸',
+        description: 'Đã xóa từ vựng khỏi hệ thống.',
+        variant: 'success',
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Đã xảy ra lỗi không xác định.';
-      setStatus({ type: 'error', message });
+      toast({
+        title: 'Thao tác thất bại 🥺',
+        description: message,
+        variant: 'destructive',
+      });
     } finally {
       setDeleting(false);
     }
@@ -990,14 +1050,22 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
 
   const onDeleteTopic = async (topic: string) => {
     if (!session?.user) {
-      setStatus({ type: 'error', message: 'Vui lòng đăng nhập để xóa chủ đề.' });
+      toast({
+        title: 'Chưa đăng nhập 🥺',
+        description: 'Vui lòng đăng nhập để xóa chủ đề.',
+        variant: 'destructive',
+      });
       return;
     }
 
     const resolvedTopic = findExistingVocabularyCategory(topic, topicOptions) || normalizeVocabularyCategory(topic);
 
     if (!resolvedTopic) {
-      setStatus({ type: 'error', message: 'Chủ đề không hợp lệ.' });
+      toast({
+        title: 'Chủ đề không hợp lệ 🌸',
+        description: 'Vui lòng chọn một chủ đề để tiếp tục.',
+        variant: 'warning',
+      });
       return;
     }
 
@@ -1037,13 +1105,18 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
       }
 
       const deletedCount = Number(payload?.deletedCount || 0);
-      setStatus({
-        type: 'success',
-        message: `Đã xóa chủ đề "${deletedTopic}" và ${deletedCount} từ vựng liên quan.`,
+      toast({
+        title: 'Xóa chủ đề thành công 🎉',
+        description: `Đã xóa chủ đề "${deletedTopic}" và ${deletedCount} từ vựng liên quan.`,
+        variant: 'success',
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Đã xảy ra lỗi không xác định.';
-      setStatus({ type: 'error', message });
+      toast({
+        title: 'Thao tác thất bại 🥺',
+        description: message,
+        variant: 'destructive',
+      });
     } finally {
       setDeletingTopic(null);
     }
@@ -1051,21 +1124,33 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
 
   const onSaveWordFamily = async () => {
     if (!session?.user) {
-      setStatus({ type: 'error', message: 'Vui lòng đăng nhập để lưu bộ từ liên quan.' });
+      toast({
+        title: 'Chưa đăng nhập 🥺',
+        description: 'Vui lòng đăng nhập để lưu bộ từ liên quan.',
+        variant: 'destructive',
+      });
       return;
     }
 
     const primaryDraft = getPrimaryDraftFromForm();
 
     if (!primaryDraft.word.trim()) {
-      setStatus({ type: 'error', message: 'Cần có từ chính trước khi lưu bộ từ liên quan.' });
+      toast({
+        title: 'Thiếu thông tin 🌸',
+        description: 'Cần có từ chính trước khi lưu bộ từ liên quan.',
+        variant: 'warning',
+      });
       return;
     }
 
     const mergedFamily = mergeWordFamilyDrafts(primaryDraft, wordFamilyDrafts);
 
     if (mergedFamily.length < 2) {
-      setStatus({ type: 'error', message: 'Chưa có biến thể liên quan để lưu.' });
+      toast({
+        title: 'Thiếu thông tin 🌸',
+        description: 'Chưa có biến thể liên quan để lưu.',
+        variant: 'warning',
+      });
       return;
     }
 
@@ -1156,16 +1241,26 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
         setVocabulary((prev) => [...createdItems, ...prev]);
       }
 
-      setStatus({
-        type: createdCount > 0 ? 'success' : 'error',
-        message:
-          createdCount > 0
-            ? `Đã lưu ${createdCount} từ trong bộ word family IELTS.${skippedCount ? ` Bỏ qua ${skippedCount} từ trùng.` : ''}`
-            : 'Không có biến thể mới để lưu (toàn bộ đã trùng).',
-      });
+      if (createdCount > 0) {
+        toast({
+          title: 'Lưu bộ từ thành công 🎉',
+          description: `Đã lưu ${createdCount} từ trong bộ word family IELTS.${skippedCount ? ` Bỏ qua ${skippedCount} từ trùng.` : ''}`,
+          variant: 'success',
+        });
+      } else {
+        toast({
+          title: 'Không có từ mới 🌸',
+          description: 'Không có biến thể mới để lưu (toàn bộ đã trùng).',
+          variant: 'info',
+        });
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Đã xảy ra lỗi không xác định.';
-      setStatus({ type: 'error', message });
+      toast({
+        title: 'Thao tác thất bại 🥺',
+        description: message,
+        variant: 'destructive',
+      });
     } finally {
       setSavingWordFamily(false);
     }
@@ -1173,12 +1268,20 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
 
   const onSaveGeneratedVocabulary = async () => {
     if (!session?.user) {
-      setStatus({ type: 'error', message: 'Vui lòng đăng nhập để lưu danh sách AI.' });
+      toast({
+        title: 'Chưa đăng nhập 🥺',
+        description: 'Vui lòng đăng nhập để lưu danh sách AI.',
+        variant: 'destructive',
+      });
       return;
     }
 
     if (generatedVocabulary.length === 0) {
-      setStatus({ type: 'error', message: 'Chưa có danh sách AI để lưu.' });
+      toast({
+        title: 'Không có danh sách 🌸',
+        description: 'Chưa có danh sách AI để lưu.',
+        variant: 'warning',
+      });
       return;
     }
 
@@ -1271,22 +1374,27 @@ export function VocabularyFormManager({ initialVocabulary }: VocabularyFormManag
         const skippedDetailText = skippedIncompleteCount
           ? ` Bỏ qua ${skippedIncompleteCount} từ chưa đủ chi tiết.`
           : '';
-        setStatus({
-          type: 'success',
-          message: `Đã lưu ${createdCount} từ mới vào cơ sở dữ liệu.${skippedCount ? ` Bỏ qua ${skippedCount} từ trùng.` : ''}${skippedDetailText}`,
+        toast({
+          title: 'Lưu từ vựng thành công 🎉',
+          description: `Đã lưu ${createdCount} từ mới vào cơ sở dữ liệu.${skippedCount ? ` Bỏ qua ${skippedCount} từ trùng.` : ''}${skippedDetailText}`,
+          variant: 'success',
         });
       } else {
-        setStatus({
-          type: 'error',
-          message:
-            skippedIncompleteCount > 0
-              ? 'Không có từ mới nào để lưu vì dữ liệu chưa đủ chi tiết hoặc bị trùng.'
-              : 'Không có từ mới nào để lưu (toàn bộ đã trùng).',
+        toast({
+          title: 'Không thể lưu từ 🌸',
+          description: skippedIncompleteCount > 0
+            ? 'Không có từ mới nào để lưu vì dữ liệu chưa đủ chi tiết hoặc bị trùng.'
+            : 'Không có từ mới nào để lưu (toàn bộ đã trùng).',
+          variant: 'warning',
         });
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Đã xảy ra lỗi không xác định.';
-      setStatus({ type: 'error', message });
+      toast({
+        title: 'Thao tác thất bại 🥺',
+        description: message,
+        variant: 'destructive',
+      });
     } finally {
       setAiMode(null);
     }

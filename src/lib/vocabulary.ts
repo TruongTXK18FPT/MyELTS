@@ -47,7 +47,11 @@ export function resolveVocabularyCategory(value: string | null | undefined, exis
     return null;
   }
 
-  return findExistingVocabularyCategory(normalized, existingCategories) || normalized;
+  return (
+    findExistingVocabularyCategory(normalized, existingCategories) ||
+    findRelatedVocabularyCategory(normalized, existingCategories) ||
+    normalized
+  );
 }
 
 export function findRelatedVocabularyCategory(value: string, existingCategories: string[]): string | null {

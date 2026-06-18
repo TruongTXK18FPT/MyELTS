@@ -11,11 +11,33 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
+      const userRole = (auth?.user as { role?: string } | undefined)?.role;
+      const isAdmin = userRole === 'ADMIN';
+      const onAdmin = nextUrl.pathname.startsWith('/admin');
+
+      if (isLoggedIn && isAdmin) {
+        if (
+          nextUrl.pathname.startsWith('/profile') ||
+          nextUrl.pathname.startsWith('/dashboard') ||
+          nextUrl.pathname.startsWith('/auth/login') ||
+          nextUrl.pathname.startsWith('/auth/register')
+        ) {
+          return Response.redirect(new URL('/admin', nextUrl));
+        }
+      }
+
       const onProtected =
         nextUrl.pathname.startsWith('/profile') ||
         nextUrl.pathname.startsWith('/vocab/upload') ||
-        nextUrl.pathname.startsWith('/ai-chat');
+        nextUrl.pathname.startsWith('/ai-chat') ||
+        nextUrl.pathname.startsWith('/dashboard');
       
+      if (onAdmin) {
+        if (isLoggedIn && isAdmin) return true;
+        if (isLoggedIn) return Response.redirect(new URL('/dashboard', nextUrl));
+        return false; // Redirect to login
+      }
+
       if (onProtected) {
         if (isLoggedIn) return true;
         return false; // Redirect to unauthenticated page
@@ -31,11 +53,15 @@ export const authConfig = {
       if (token.sub && session.user) {
         session.user.id = token.sub;
       }
+      if (token.role && session.user) {
+        session.user.role = token.role as string;
+      }
       return session;
     },
     jwt({ token, user }) {
       if (user) {
         token.sub = user.id;
+        token.role = (user as { role?: string }).role;
       }
       return token;
     }

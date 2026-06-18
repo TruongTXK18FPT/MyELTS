@@ -104,6 +104,14 @@ export function Header() {
                   <p className="truncate text-xs font-normal text-muted-foreground">{userEmail}</p>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                {session.user.role === 'ADMIN' && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin">
+                      <LayoutDashboard className="h-4 w-4 text-pink-500" />
+                      Trang Quản trị
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem asChild>
                   <Link href="/profile">
                     <UserCircle2 className="h-4 w-4" />
@@ -173,6 +181,14 @@ export function Header() {
                       </div>
                     </div>
 
+                    {session.user.role === 'ADMIN' && (
+                      <Button variant="outline" asChild className="w-full justify-start border-pink-200 text-pink-600 hover:bg-pink-50">
+                        <Link href="/admin">
+                          <LayoutDashboard className="h-4 w-4" />
+                          Trang Quản trị
+                        </Link>
+                      </Button>
+                    )}
                     <Button variant="outline" asChild className="w-full justify-start">
                       <Link href="/profile">
                         <UserCircle2 className="h-4 w-4" />
