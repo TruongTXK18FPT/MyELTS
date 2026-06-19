@@ -12,9 +12,10 @@ type MainLayoutProps = {
 export function MainLayout({ children }: MainLayoutProps) {
   const pathname = usePathname();
   const isAdminRoute = pathname.startsWith('/admin');
-  const hideFooter = pathname.startsWith('/ai-chat') || isAdminRoute;
+  const isWorkspaceRoute = pathname.startsWith('/workspace');
+  const hideFooter = pathname.startsWith('/ai-chat') || isAdminRoute || isWorkspaceRoute;
 
-  if (isAdminRoute) {
+  if (isAdminRoute || isWorkspaceRoute) {
     return <main className="min-h-screen bg-background">{children}</main>;
   }
 

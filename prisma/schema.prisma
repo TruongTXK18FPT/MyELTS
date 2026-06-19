@@ -1,10 +1,12 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
 }
 
 enum TutorType {
@@ -83,6 +85,10 @@ model User {
   diagnosticAttempts DiagnosticAttempt[]
   listeningAudioAssets ListeningAudioAsset[]
   roadmapPlans  RoadmapPlan[]
+  deepPlans     DeepPlan[]
+  dailyPlans    DailyPlan[]
+  notes         Note[]
+  spacedReviews SpacedReview[]
 }
 
 model ChatSession {
@@ -413,4 +419,167 @@ model RoadmapReplanEvent {
   roadmapPlan RoadmapPlan @relation(fields: [roadmapPlanId], references: [id], onDelete: Cascade)
 
   @@index([roadmapPlanId, createdAt])
+}
+
+// ===== DEEP WORKSPACE CONTROL MODELS =====
+
+enum DeepPlanStatus {
+  DRAFT
+  PENDING_EDIT
+  APPROVED
+  IN_PROGRESS
+  COMPLETED
+  ARCHIVED
+}
+
+enum PlanTaskStatus2 {
+  TODO
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+}
+
+enum PlanTaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model DeepPlan {
+  id            String         @id @default(cuid())
+  userId        String
+  title         String
+  description   String?        @db.Text
+  topic         String
+  subTopics     String[]       @default([])
+  status        DeepPlanStatus @default(DRAFT)
+  startDate     DateTime
+  endDate       DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dailyPlans    DailyPlan[]
+  editRequests  PlanEditRequest[]
+
+  @@index([userId, status])
+  @@index([userId, topic])
+}
+
+model DailyPlan {
+  id            String         @id @default(cuid())
+  deepPlanId    String
+  userId        String
+  date          DateTime       @db.Date
+  timeSlotStart String
+  timeSlotEnd   String
+  status        DeepPlanStatus @default(DRAFT)
+  aiSuggestion  Json?
+  completionRate Float         @default(0)
+  selfRating    Int?
+  reflection    String?        @db.Text
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  deepPlan      DeepPlan       @relation(fields: [deepPlanId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks         PlanTask2[]
+  notes         Note[]
+
+  @@unique([deepPlanId, date])
+  @@index([userId, date])
+  @@index([deepPlanId, date])
+}
+
+model PlanTask2 {
+  id              String           @id @default(cuid())
+  dailyPlanId     String
+  title           String
+  description     String?          @db.Text
+  knowledgeArea   String
+  estimatedMinutes Int             @default(30)
+  actualMinutes   Int?
+  status          PlanTaskStatus2  @default(TODO)
+  priority        PlanTaskPriority @default(MEDIUM)
+  order           Int              @default(0)
+  aiGenerated     Boolean          @default(true)
+  resources       Json?
+  completedAt     DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  dailyPlan       DailyPlan        @relation(fields: [dailyPlanId], references: [id], onDelete: Cascade)
+
+  @@index([dailyPlanId, status])
+  @@index([dailyPlanId, order])
+}
+
+model PlanEditRequest {
+  id            String     @id @default(cuid())
+  deepPlanId    String
+  userMessage   String     @db.Text
+  aiResponse    String?    @db.Text
+  appliedAt     DateTime?
+  createdAt     DateTime   @default(now())
+
+  deepPlan      DeepPlan   @relation(fields: [deepPlanId], references: [id], onDelete: Cascade)
+
+  @@index([deepPlanId, createdAt])
+}
+
+model Note {
+  id            String       @id @default(cuid())
+  userId        String
+  dailyPlanId   String?
+  title         String
+  content       Json
+  plainText     String?      @db.Text
+  tags          String[]     @default([])
+  isPinned      Boolean      @default(false)
+  date          DateTime     @db.Date
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dailyPlan     DailyPlan?   @relation(fields: [dailyPlanId], references: [id], onDelete: SetNull)
+  embeddings    NoteEmbedding[]
+  spacedReviews SpacedReview[]
+
+  @@index([userId, date])
+  @@index([userId, dailyPlanId])
+  @@index([userId, isPinned])
+}
+
+model NoteEmbedding {
+  id            String                 @id @default(cuid())
+  noteId        String
+  chunkIndex    Int                    @default(0)
+  chunkText     String                 @db.Text
+  embedding     Unsupported("vector(1024)")?
+  createdAt     DateTime               @default(now())
+
+  note          Note                   @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@unique([noteId, chunkIndex])
+  @@index([noteId])
+}
+
+model SpacedReview {
+  id             String    @id @default(cuid())
+  userId         String
+  noteId         String?
+  title          String
+  box            Int       @default(1) // Leitner Box (1-5)
+  intervalDays   Int       @default(1) // Khoảng cách ôn tập tiếp theo (ngày)
+  nextReviewAt   DateTime  @default(now())
+  lastReviewedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  note           Note?     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@index([userId, nextReviewAt])
+  @@index([userId, noteId])
 }

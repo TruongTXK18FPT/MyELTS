@@ -30,7 +30,8 @@ export const authConfig = {
         nextUrl.pathname.startsWith('/profile') ||
         nextUrl.pathname.startsWith('/vocab/upload') ||
         nextUrl.pathname.startsWith('/ai-chat') ||
-        nextUrl.pathname.startsWith('/dashboard');
+        nextUrl.pathname.startsWith('/dashboard') ||
+        nextUrl.pathname.startsWith('/workspace');
       
       if (onAdmin) {
         if (isLoggedIn && isAdmin) return true;
@@ -45,7 +46,7 @@ export const authConfig = {
         isLoggedIn &&
         (nextUrl.pathname.startsWith('/auth/login') || nextUrl.pathname.startsWith('/auth/register'))
       ) {
-        return Response.redirect(new URL('/profile', nextUrl));
+        return Response.redirect(new URL('/workspace', nextUrl));
       }
       return true;
     },
