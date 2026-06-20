@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { CalendarView } from '@/components/workspace/calendar/CalendarView';
 import {
@@ -171,6 +171,60 @@ export default function WorkspacePage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'calendar' | 'modules'>('overview');
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
 
+  // Refs for worktree elements
+  const containerRef = useRef<HTMLDivElement>(null);
+  const coreRef = useRef<HTMLButtonElement>(null);
+  const chronoPlannerRef = useRef<HTMLButtonElement>(null);
+  const planGeneratorRef = useRef<HTMLDivElement>(null);
+  const knowledgeVaultRef = useRef<HTMLDivElement>(null);
+  const synapseRecallRef = useRef<HTMLDivElement>(null);
+
+  const [coords, setCoords] = useState<{
+    core: { x: number; y: number };
+    chronoPlanner: { x: number; y: number };
+    planGenerator: { x: number; y: number };
+    knowledgeVault: { x: number; y: number };
+    synapseRecall: { x: number; y: number };
+  }>({
+    core: { x: 450, y: 110 },
+    chronoPlanner: { x: 220, y: 50 },
+    planGenerator: { x: 220, y: 170 },
+    knowledgeVault: { x: 680, y: 50 },
+    synapseRecall: { x: 680, y: 170 },
+  });
+
+  const updateCoordinates = useCallback(() => {
+    if (!containerRef.current) return;
+    const parentRect = containerRef.current.getBoundingClientRect();
+
+    const getCenter = (el: HTMLElement | null, fallbackX: number, fallbackY: number) => {
+      if (!el) return { x: fallbackX, y: fallbackY };
+      const rect = el.getBoundingClientRect();
+      return {
+        x: rect.left - parentRect.left + rect.width / 2,
+        y: rect.top - parentRect.top + rect.height / 2,
+      };
+    };
+
+    setCoords({
+      core: getCenter(coreRef.current, parentRect.width / 2, parentRect.height / 2),
+      chronoPlanner: getCenter(chronoPlannerRef.current, 220, 50),
+      planGenerator: getCenter(planGeneratorRef.current, 220, 170),
+      knowledgeVault: getCenter(knowledgeVaultRef.current, 680, 50),
+      synapseRecall: getCenter(synapseRecallRef.current, 680, 170),
+    });
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(updateCoordinates, 300);
+    window.addEventListener('resize', updateCoordinates);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', updateCoordinates);
+    };
+  }, [updateCoordinates, activeTab]);
+
+
   const fetchPlans = useCallback(async () => {
     try {
       const res = await fetch('/api/deep-workspace/plans');
@@ -307,22 +361,23 @@ export default function WorkspacePage() {
         </h3>
 
         {/* The Graphic Worktree Nodes Grid */}
-        <div className="relative w-full max-w-4xl min-h-[220px] flex flex-col items-center justify-center">
+        <div ref={containerRef} className="relative w-full max-w-4xl min-h-[220px] flex flex-col items-center justify-center">
           {/* SVG Connector Lines in Background */}
           <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-40 z-0">
             {/* Center to Left Branch */}
-            <path d="M 450 110 L 220 50" stroke="#06b6d4" strokeWidth="1.5" strokeDasharray="3 3" />
-            <path d="M 450 110 L 220 170" stroke="#06b6d4" strokeWidth="1.5" strokeDasharray="3 3" />
+            <line x1={coords.core.x} y1={coords.core.y} x2={coords.chronoPlanner.x} y2={coords.chronoPlanner.y} stroke="#06b6d4" strokeWidth="1.5" strokeDasharray="3 3" />
+            <line x1={coords.core.x} y1={coords.core.y} x2={coords.planGenerator.x} y2={coords.planGenerator.y} stroke="#06b6d4" strokeWidth="1.5" strokeDasharray="3 3" />
             {/* Center to Right Branch */}
-            <path d="M 450 110 L 680 50" stroke="#06b6d4" strokeWidth="1.5" strokeDasharray="3 3" />
-            <path d="M 450 110 L 680 170" stroke="#06b6d4" strokeWidth="1.5" strokeDasharray="3 3" />
+            <line x1={coords.core.x} y1={coords.core.y} x2={coords.knowledgeVault.x} y2={coords.knowledgeVault.y} stroke="#06b6d4" strokeWidth="1.5" strokeDasharray="3 3" />
+            <line x1={coords.core.x} y1={coords.core.y} x2={coords.synapseRecall.x} y2={coords.synapseRecall.y} stroke="#06b6d4" strokeWidth="1.5" strokeDasharray="3 3" />
             {/* Center to Center top/bottom */}
-            <path d="M 450 110 L 450 35" stroke="#06b6d4" strokeWidth="1.5" strokeDasharray="3 3" />
-            <path d="M 450 110 L 450 185" stroke="#06b6d4" strokeWidth="1.5" strokeDasharray="3 3" />
+            <line x1={coords.core.x} y1={coords.core.y} x2={coords.core.x} y2={coords.core.y - 75} stroke="#06b6d4" strokeWidth="1.5" strokeDasharray="3 3" />
+            <line x1={coords.core.x} y1={coords.core.y} x2={coords.core.x} y2={coords.core.y + 75} stroke="#06b6d4" strokeWidth="1.5" strokeDasharray="3 3" />
           </svg>
 
           {/* Core Central Node */}
           <button
+            ref={coreRef}
             onClick={() => setActiveTab('overview')}
             className={cn(
               "absolute z-10 h-16 w-16 rounded-full border flex flex-col items-center justify-center transition-all duration-300",
@@ -339,6 +394,7 @@ export default function WorkspacePage() {
           {/* Left Branch - Planning Cores */}
           <div className="absolute left-[5%] sm:left-[12%] top-[10%] flex flex-col items-end gap-2.5">
             <button
+              ref={chronoPlannerRef}
               onClick={() => setActiveTab('calendar')}
               className={cn(
                 "px-3 py-2 rounded-lg border text-left font-mono transition-all duration-200 w-44 hover:scale-[1.03]",
@@ -356,7 +412,7 @@ export default function WorkspacePage() {
             </button>
 
             <Link href="/workspace/plans/new" className="block w-44">
-              <div className="px-3 py-2 rounded-lg border border-slate-800 bg-slate-950/60 text-left font-mono transition-all hover:border-cyan-500/40 hover:scale-[1.03] group">
+              <div ref={planGeneratorRef} className="px-3 py-2 rounded-lg border border-slate-800 bg-slate-950/60 text-left font-mono transition-all hover:border-cyan-500/40 hover:scale-[1.03] group">
                 <div className="flex items-center justify-between text-[9px] font-bold text-cyan-500/50 group-hover:text-cyan-400">
                   <span>BRANCH_A2</span>
                   <PlusCircle className="h-3.5 w-3.5" />
@@ -370,7 +426,7 @@ export default function WorkspacePage() {
           {/* Right Branch - Knowledge Vault */}
           <div className="absolute right-[5%] sm:right-[12%] top-[10%] flex flex-col items-start gap-2.5">
             <Link href="/workspace/notes" className="block w-44">
-              <div className="px-3 py-2 rounded-lg border border-slate-800 bg-slate-950/60 text-left font-mono transition-all hover:border-cyan-500/40 hover:scale-[1.03] group">
+              <div ref={knowledgeVaultRef} className="px-3 py-2 rounded-lg border border-slate-800 bg-slate-950/60 text-left font-mono transition-all hover:border-cyan-500/40 hover:scale-[1.03] group">
                 <div className="flex items-center justify-between text-[9px] font-bold text-cyan-500/50 group-hover:text-cyan-400">
                   <span>BRANCH_B1</span>
                   <NotebookPen className="h-3.5 w-3.5" />
@@ -381,7 +437,7 @@ export default function WorkspacePage() {
             </Link>
 
             <Link href="/workspace/reviews" className="block w-44">
-              <div className="px-3 py-2 rounded-lg border border-slate-800 bg-slate-950/60 text-left font-mono transition-all hover:border-cyan-500/40 hover:scale-[1.03] group">
+              <div ref={synapseRecallRef} className="px-3 py-2 rounded-lg border border-slate-800 bg-slate-950/60 text-left font-mono transition-all hover:border-cyan-500/40 hover:scale-[1.03] group">
                 <div className="flex items-center justify-between text-[9px] font-bold text-cyan-500/50 group-hover:text-cyan-400">
                   <span>BRANCH_B2</span>
                   <Brain className="h-3.5 w-3.5" />
@@ -470,7 +526,7 @@ export default function WorkspacePage() {
               value={dbData?.ielts.targetBand ? `${dbData.ielts.targetBand} Band` : '7.5 Target'}
               subtext="Mục tiêu học tập tối thượng"
               icon={Activity}
-              glowColor="pink"
+              glowColor="amber"
             />
             {/* Lexicon / Vocabulary Bank */}
             <TechStatCard
@@ -497,7 +553,7 @@ export default function WorkspacePage() {
                 <p className="text-[9px] font-mono text-slate-500 uppercase tracking-wider">TEST PRACTICE UNITS</p>
                 <h3 className="text-lg font-bold text-slate-200 mt-1 font-mono">{dbData?.ielts.totalAttempts || 0} lần</h3>
               </div>
-              <div className="h-8 w-8 rounded bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-400 font-bold">
+              <div className="h-8 w-8 rounded bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 font-bold">
                 {dbData?.ielts.totalAttempts || 0}
               </div>
             </div>
@@ -600,7 +656,7 @@ export default function WorkspacePage() {
             <div className="rounded-xl border border-slate-800 bg-slate-900/20 p-5 backdrop-blur flex flex-col justify-between">
               <div>
                 <h3 className="text-xs font-bold text-slate-200 flex items-center gap-2 font-mono uppercase tracking-wider mb-4">
-                  <Clock className="h-4 w-4 text-pink-400" />
+                  <Clock className="h-4 w-4 text-cyan-400" />
                   PENDING_TASKS_QUEUE
                 </h3>
 
@@ -678,7 +734,7 @@ export default function WorkspacePage() {
                       const fill = node.group === 1
                         ? '#06b6d4'
                         : node.group === 2
-                          ? '#f472b6'
+                          ? '#f59e0b'
                           : '#a855f7';
 
                       return (
@@ -715,7 +771,7 @@ export default function WorkspacePage() {
 
                 <div className="absolute bottom-2 left-2 text-[8px] font-mono text-slate-500 flex gap-2">
                   <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-cyan-500" />Core</span>
-                  <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-pink-500" />Tasks</span>
+                  <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-amber-500" />Tasks</span>
                   <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-purple-500" />Notes</span>
                 </div>
               </div>

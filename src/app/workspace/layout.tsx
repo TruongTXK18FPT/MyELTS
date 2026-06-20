@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
   Calendar,
@@ -36,9 +36,19 @@ export default function WorkspaceLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { data: session, status } = useSession();
   const [collapsed, setCollapsed] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      const timer = setTimeout(() => {
+        router.push('/auth/login');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [status, router]);
 
   useEffect(() => {
     const updateTime = () => {
@@ -87,6 +97,9 @@ export default function WorkspaceLayout({
           <div className="h-1 bg-red-950 rounded-full overflow-hidden">
             <div className="h-full bg-red-500 w-1/2 animate-[pulse_1s_infinite]" />
           </div>
+          <Button asChild className="w-full mt-4 bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 rounded-xl hover:text-red-300">
+            <Link href="/auth/login">ĐĂNG NHẬP NGAY</Link>
+          </Button>
         </div>
       </div>
     );

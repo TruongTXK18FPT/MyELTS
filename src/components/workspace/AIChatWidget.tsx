@@ -72,27 +72,27 @@ export function AIChatWidget() {
     <div className="fixed bottom-6 right-6 z-50 print:hidden flex flex-col items-end">
       {/* Chat Window */}
       {isOpen && (
-        <div className="w-[380px] sm:w-[400px] h-[500px] rounded-2xl border border-pink-100 bg-white shadow-2xl flex flex-col mb-4 overflow-hidden animate-in slide-in-from-bottom-5 duration-200">
+        <div className="w-[380px] sm:w-[400px] h-[500px] rounded-2xl border border-slate-800 bg-slate-950/95 backdrop-blur-xl shadow-2xl flex flex-col mb-4 overflow-hidden animate-in slide-in-from-bottom-5 duration-200">
           {/* Header */}
-          <div className="bg-gradient-to-r from-pink-500 to-rose-400 p-4 text-white flex items-center justify-between shadow-sm">
+          <div className="bg-slate-900 border-b border-slate-800 p-4 text-slate-100 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-white animate-pulse" />
+              <Sparkles className="h-5 w-5 text-cyan-400 animate-pulse" />
               <div>
                 <h3 className="font-bold text-sm">AI Companion</h3>
-                <p className="text-[10px] text-pink-100 font-medium">Trợ lý đồng hành học tập</p>
+                <p className="text-[10px] text-slate-400 font-mono">Trợ lý đồng hành học tập</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={handleReset}
                 title="Làm mới hội thoại"
-                className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-all"
+                className="text-slate-400 hover:text-slate-100 hover:bg-slate-800 p-1.5 rounded-lg transition-all"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
               </button>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-all"
+                className="text-slate-400 hover:text-slate-100 hover:bg-slate-800 p-1.5 rounded-lg transition-all"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -100,23 +100,23 @@ export function AIChatWidget() {
           </div>
 
           {/* Messages List */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-pink-50/5">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-950/40">
             {messages.map((m, i) => (
               <div
                 key={i}
                 className={cn(
                   'flex flex-col max-w-[80%] rounded-2xl px-3 py-2 text-xs leading-relaxed shadow-sm transition-all',
                   m.role === 'user'
-                    ? 'bg-pink-500 text-white rounded-tr-none ml-auto'
-                    : 'bg-slate-50 text-text-main border border-slate-100 rounded-tl-none mr-auto'
+                    ? 'bg-cyan-500/10 border border-cyan-500/30 text-cyan-200 rounded-tr-none ml-auto'
+                    : 'bg-slate-900/60 text-slate-200 border border-slate-800/80 rounded-tl-none mr-auto'
                 )}
               >
                 <p className="whitespace-pre-wrap">{m.content}</p>
               </div>
             ))}
             {loading && (
-              <div className="flex items-center gap-2 text-muted-foreground mr-auto bg-slate-50 border border-slate-100 rounded-2xl rounded-tl-none px-3 py-2 text-xs shadow-sm">
-                <Loader2 className="h-3 w-3 animate-spin text-pink-500" />
+              <div className="flex items-center gap-2 text-slate-400 mr-auto bg-slate-900/60 border border-slate-800/80 rounded-2xl rounded-tl-none px-3 py-2 text-xs shadow-sm">
+                <Loader2 className="h-3 w-3 animate-spin text-cyan-400" />
                 <span>AI đang suy nghĩ...</span>
               </div>
             )}
@@ -124,20 +124,20 @@ export function AIChatWidget() {
           </div>
 
           {/* Footer Input */}
-          <div className="p-3 border-t border-pink-50 bg-white flex items-center gap-2">
+          <div className="p-3 border-t border-slate-800 bg-slate-950 flex items-center gap-2">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Hỏi AI về ghi chú hoặc kế hoạch..."
-              className="flex-1 rounded-xl border border-pink-100/60 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-pink-200 text-text-main bg-white"
+              className="flex-1 rounded-xl border border-slate-800 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500/30 focus:border-cyan-500/50 text-slate-100 bg-slate-900 placeholder-slate-500"
             />
             <Button
               size="icon"
               onClick={handleSend}
               disabled={loading || !input.trim()}
-              className="h-8 w-8 rounded-xl bg-pink-500 hover:bg-pink-600 text-white shadow-sm border-none flex-shrink-0"
+              className="h-8 w-8 rounded-xl bg-cyan-500 hover:bg-cyan-600 text-slate-950 shadow-sm border-none flex-shrink-0"
             >
               <Send className="h-3.5 w-3.5" />
             </Button>
@@ -148,17 +148,18 @@ export function AIChatWidget() {
       {/* Floating Toggle Bubble */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="h-14 w-14 rounded-full bg-gradient-to-r from-pink-500 to-rose-400 hover:from-pink-600 hover:to-rose-500 text-white flex items-center justify-center shadow-lg shadow-pink-200 hover:scale-105 transition-all duration-300 border-none group cursor-pointer focus:outline-none"
+        className="h-14 w-14 rounded-full bg-slate-900 hover:bg-slate-800 text-cyan-400 flex items-center justify-center border border-cyan-500/30 hover:border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.15)] hover:shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:scale-105 transition-all duration-300 group cursor-pointer focus:outline-none"
       >
         {isOpen ? (
-          <X className="h-6 w-6" />
+          <X className="h-6 w-6 text-cyan-400" />
         ) : (
           <div className="relative">
-            <MessageSquare className="h-6 w-6" />
-            <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-emerald-400 border-2 border-pink-500 animate-pulse" />
+            <MessageSquare className="h-6 w-6 text-cyan-400" />
+            <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-emerald-400 border-2 border-slate-900 animate-pulse" />
           </div>
         )}
       </button>
     </div>
   );
+
 }
