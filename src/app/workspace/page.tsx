@@ -333,7 +333,7 @@ export default function WorkspacePage() {
         <div className="flex flex-col items-center gap-4 text-center">
           <Loader2 className="h-8 w-8 animate-spin text-cyan-400" />
           <p className="text-xs font-mono text-slate-500 uppercase tracking-widest">
-            Booting Cognitive Command deck...
+            Đang tải không gian học tập...
           </p>
         </div>
       </div>
@@ -350,14 +350,14 @@ export default function WorkspacePage() {
       {/* 1. Interactive Vis-Worktree Selector */}
       <div className="border border-slate-800 bg-slate-900/20 rounded-xl p-6 backdrop-blur relative overflow-hidden flex flex-col items-center">
         {/* Futuristic corner telemetry ticks */}
-        <div className="absolute top-0 right-0 p-2 text-[8px] font-mono text-slate-600">[ COGNITIVE_TREE_DOCK_V3 ]</div>
+        <div className="absolute top-0 right-0 p-2 text-[8px] font-mono text-slate-600">[ SƠ ĐỒ TƯƠNG TÁC ]</div>
         <div className="absolute top-0 left-0 w-1.5 h-1.5 border-t border-l border-cyan-500/40" />
         <div className="absolute top-0 right-0 w-1.5 h-1.5 border-t border-r border-cyan-500/40" />
         <div className="absolute bottom-0 left-0 w-1.5 h-1.5 border-b border-l border-cyan-500/40" />
         <div className="absolute bottom-0 right-0 w-1.5 h-1.5 border-b border-r border-cyan-500/40" />
 
         <h3 className="text-xs font-bold tracking-widest text-cyan-400 font-mono uppercase mb-6 text-center">
-          // INTERACTIVE_LEARNING_WORKTREE
+          // BẢNG ĐIỀU HƯỚNG TÍNH NĂNG
         </h3>
 
         {/* The Graphic Worktree Nodes Grid */}
@@ -388,7 +388,7 @@ export default function WorkspacePage() {
             style={{ left: 'calc(50% - 32px)', top: 'calc(50% - 32px)' }}
           >
             <Cpu className="h-6 w-6 animate-pulse" />
-            <span className="text-[7px] font-mono tracking-widest mt-1 font-bold">CORE_SYS</span>
+            <span className="text-[7px] font-mono tracking-widest mt-1 font-bold">TRUNG TÂM</span>
           </button>
 
           {/* Left Branch - Planning Cores */}
@@ -407,7 +407,7 @@ export default function WorkspacePage() {
                 <span>BRANCH_A1</span>
                 <Calendar className="h-3.5 w-3.5" />
               </div>
-              <p className="text-xs font-bold mt-1 text-slate-100">CHRONO_PLANNER</p>
+              <p className="text-xs font-bold mt-1 text-slate-100">KẾ HOẠCH HỌC TẬP</p>
               <span className="text-[7px] text-slate-500">Lịch trình kế hoạch học tập</span>
             </button>
 
@@ -417,7 +417,7 @@ export default function WorkspacePage() {
                   <span>BRANCH_A2</span>
                   <PlusCircle className="h-3.5 w-3.5" />
                 </div>
-                <p className="text-xs font-bold mt-1 text-slate-100 group-hover:text-cyan-400 transition-colors">PLAN_GENERATOR</p>
+                <p className="text-xs font-bold mt-1 text-slate-100 group-hover:text-cyan-400 transition-colors">TẠO LỘ TRÌNH</p>
                 <span className="text-[7px] text-slate-500">Thiết lập lộ trình mới</span>
               </div>
             </Link>
@@ -431,7 +431,7 @@ export default function WorkspacePage() {
                   <span>BRANCH_B1</span>
                   <NotebookPen className="h-3.5 w-3.5" />
                 </div>
-                <p className="text-xs font-bold mt-1 text-slate-100 group-hover:text-cyan-400 transition-colors">KNOWLEDGE_VAULT</p>
+                <p className="text-xs font-bold mt-1 text-slate-100 group-hover:text-cyan-400 transition-colors">KHO GHI CHÚ</p>
                 <span className="text-[7px] text-slate-500">Hệ quản lý ghi chú tri thức</span>
               </div>
             </Link>
@@ -442,7 +442,7 @@ export default function WorkspacePage() {
                   <span>BRANCH_B2</span>
                   <Brain className="h-3.5 w-3.5" />
                 </div>
-                <p className="text-xs font-bold mt-1 text-slate-100 group-hover:text-cyan-400 transition-colors">SYNAPSE_RECALL</p>
+                <p className="text-xs font-bold mt-1 text-slate-100 group-hover:text-cyan-400 transition-colors">ÔN TẬP GHI NHỚ</p>
                 <span className="text-[7px] text-slate-500">Ôn tập giãn cách Leitner</span>
               </div>
             </Link>
@@ -456,7 +456,7 @@ export default function WorkspacePage() {
                   <span>FOCUS_SYS</span>
                   <Clock className="h-3 w-3" />
                 </div>
-                <p className="text-[11px] font-bold mt-0.5 text-slate-100 group-hover:text-cyan-400">CHRONO_FOCUS</p>
+                <p className="text-[11px] font-bold mt-0.5 text-slate-100 group-hover:text-cyan-400">POMODORO TẬP TRUNG</p>
               </div>
             </Link>
 
@@ -466,7 +466,7 @@ export default function WorkspacePage() {
                   <span>PRACTICE_SYS</span>
                   <PenTool className="h-3 w-3" />
                 </div>
-                <p className="text-[11px] font-bold mt-0.5 text-slate-100 group-hover:text-cyan-400">TEST_PORTAL</p>
+                <p className="text-[11px] font-bold mt-0.5 text-slate-100 group-hover:text-cyan-400">LUYỆN ĐỀ THI</p>
               </div>
             </Link>
           </div>
@@ -478,7 +478,7 @@ export default function WorkspacePage() {
                   <span>TUTOR_SYS</span>
                   <MessageSquare className="h-3 w-3" />
                 </div>
-                <p className="text-[11px] font-bold mt-0.5 text-slate-100 group-hover:text-cyan-400">COGNITIVE_TUTOR</p>
+                <p className="text-[11px] font-bold mt-0.5 text-slate-100 group-hover:text-cyan-400">TRỢ LÝ AI CHAT</p>
               </div>
             </Link>
 
@@ -495,7 +495,7 @@ export default function WorkspacePage() {
                 <span>ALL_MODULES</span>
                 <Layers className="h-3 w-3" />
               </div>
-              <p className="text-[11px] font-bold mt-0.5 text-slate-100">APP_CORES_INDEX</p>
+              <p className="text-[11px] font-bold mt-0.5 text-slate-100">TẤT CẢ TÍNH NĂNG</p>
             </button>
           </div>
         </div>
@@ -522,7 +522,7 @@ export default function WorkspacePage() {
             />
             {/* Target Goal Band */}
             <TechStatCard
-              title="ROADMAP TARGET"
+              title="MỤC TIÊU LỘ TRÌNH"
               value={dbData?.ielts.targetBand ? `${dbData.ielts.targetBand} Band` : '7.5 Target'}
               subtext="Mục tiêu học tập tối thượng"
               icon={Activity}
@@ -530,7 +530,7 @@ export default function WorkspacePage() {
             />
             {/* Lexicon / Vocabulary Bank */}
             <TechStatCard
-              title="LEXICON STORAGE"
+              title="KHO TỪ VỰNG"
               value={`${dbData?.ielts.totalVocab || 0} từ`}
               subtext="Từ vựng IELTS đã ghi nhớ"
               icon={BookOpen}
@@ -538,9 +538,9 @@ export default function WorkspacePage() {
             />
             {/* Focus & Streak Cores */}
             <TechStatCard
-              title="CHRONO STREAK"
+              title="STREAK HỌC TẬP"
               value={`${dbData?.streak || 0} ngày`}
-              subtext={dbData?.streak && dbData.streak > 0 ? '🔥 Core links active!' : 'Hệ thống chưa kết nối'}
+              subtext={dbData?.streak && dbData.streak > 0 ? '🔥 Chuỗi học tập đang hoạt động!' : 'Chưa có chuỗi học tập'}
               icon={Flame}
               glowColor="emerald"
             />
@@ -550,7 +550,7 @@ export default function WorkspacePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="rounded-xl border border-slate-800 bg-slate-900/20 p-4 flex items-center justify-between backdrop-blur">
               <div>
-                <p className="text-[9px] font-mono text-slate-500 uppercase tracking-wider">TEST PRACTICE UNITS</p>
+                <p className="text-[9px] font-mono text-slate-500 uppercase tracking-wider">SỐ LẦN LUYỆN ĐỀ</p>
                 <h3 className="text-lg font-bold text-slate-200 mt-1 font-mono">{dbData?.ielts.totalAttempts || 0} lần</h3>
               </div>
               <div className="h-8 w-8 rounded bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 font-bold">
@@ -560,7 +560,7 @@ export default function WorkspacePage() {
 
             <div className="rounded-xl border border-slate-800 bg-slate-900/20 p-4 flex items-center justify-between backdrop-blur">
               <div>
-                <p className="text-[9px] font-mono text-slate-500 uppercase tracking-wider">COMPLETED GRAMMAR SYNAPSES</p>
+                <p className="text-[9px] font-mono text-slate-500 uppercase tracking-wider">NGỮ PHÁP ĐÃ HOÀN THÀNH</p>
                 <h3 className="text-lg font-bold text-slate-200 mt-1 font-mono">{dbData?.ielts.completedGrammar || 0} chủ đề</h3>
               </div>
               <div className="h-8 w-8 rounded bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 font-bold">
@@ -570,7 +570,7 @@ export default function WorkspacePage() {
 
             <div className="rounded-xl border border-slate-800 bg-slate-900/20 p-4 flex items-center justify-between backdrop-blur">
               <div>
-                <p className="text-[9px] font-mono text-slate-500 uppercase tracking-wider">DAILY TASK COMPLETION RATE</p>
+                <p className="text-[9px] font-mono text-slate-500 uppercase tracking-wider">TỶ LỆ HOÀN THÀNH NHIỆM VỤ NGÀY</p>
                 <h3 className="text-lg font-bold text-slate-200 mt-1 font-mono">
                   {dbData?.tasks.completed || 0}/{dbData?.tasks.total || 0} ({taskCompletionRate}%)
                 </h3>
@@ -589,7 +589,7 @@ export default function WorkspacePage() {
                 <div>
                   <h3 className="text-xs font-bold text-slate-200 flex items-center gap-2 font-mono uppercase tracking-wider">
                     <TrendingUp className="h-4 w-4 text-cyan-400" />
-                    WEEKLY PLANS COMPLETION TELEMETRY
+                    BIỂU ĐỒ HOÀN THÀNH KẾ HOẠCH TUẦN
                   </h3>
                 </div>
               </div>
@@ -630,7 +630,7 @@ export default function WorkspacePage() {
                         fontFamily: 'monospace',
                         color: '#f1f5f9',
                       }}
-                      formatter={(value: number) => [`${value}%`, 'COMPLETED']}
+                      formatter={(value: number) => [`${value}%`, 'ĐÃ HOÀN THÀNH']}
                       labelFormatter={label => {
                         const d = new Date(label);
                         return d.toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -647,7 +647,7 @@ export default function WorkspacePage() {
                 </ResponsiveContainer>
               ) : (
                 <div className="h-[230px] flex items-center justify-center text-slate-500 font-mono text-[10px]">
-                  [ SYSTEM_NOTICE: NO TELEMETRY DATA AVAILABLE ]
+                  [ THÔNG BÁO: CHƯA CÓ DỮ LIỆU THỐNG KÊ ]
                 </div>
               )}
             </div>
@@ -657,13 +657,13 @@ export default function WorkspacePage() {
               <div>
                 <h3 className="text-xs font-bold text-slate-200 flex items-center gap-2 font-mono uppercase tracking-wider mb-4">
                   <Clock className="h-4 w-4 text-cyan-400" />
-                  PENDING_TASKS_QUEUE
+                  HÀNG ĐỢI NHIỆM VỤ CHỜ
                 </h3>
 
                 {dbData && dbData.pendingTasks.length === 0 ? (
                   <div className="text-center py-12 space-y-2">
                     <CheckCircle2 className="h-8 w-8 text-emerald-400 mx-auto" />
-                    <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">All tasks clear. Core efficient. 🎉</p>
+                    <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Đã hoàn thành tất cả nhiệm vụ ngày! 🎉</p>
                   </div>
                 ) : (
                   <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
@@ -692,7 +692,7 @@ export default function WorkspacePage() {
                   onClick={() => setActiveTab('calendar')}
                   className="text-[10px] font-mono tracking-widest text-cyan-400 hover:text-cyan-300 hover:underline flex items-center gap-1.5"
                 >
-                  ACCESS_CHRONO_CALENDAR →
+                  TRUY CẬP LỊCH TRÌNH →
                 </button>
               </div>
             </div>
@@ -704,14 +704,14 @@ export default function WorkspacePage() {
             <div className="rounded-xl border border-slate-800 bg-slate-900/20 p-5 backdrop-blur">
               <h3 className="text-xs font-bold text-slate-200 flex items-center gap-2 font-mono uppercase tracking-wider mb-2">
                 <Network className="h-4 w-4 text-cyan-400" />
-                SUBJECTS_KNOWLEDGE_SYNAPSE
+                BẢN ĐỒ LIÊN KẾT CHỦ ĐỀ
               </h3>
               <p className="text-[10px] text-slate-500 font-mono mb-4">Các đỉnh liên kết chủ đề và mức tích lũy học tập</p>
 
               <div className="w-full flex justify-center bg-slate-950/50 rounded-lg p-3 border border-slate-800/50 relative">
                 {graphLayout.nodes.length <= 1 ? (
                   <div className="h-[240px] flex items-center justify-center text-[10px] text-slate-500 font-mono uppercase tracking-widest text-center">
-                    [ INSUFFICIENT DATA TO CONSTRUCT MAP ]
+                    [ CHƯA ĐỦ DỮ LIỆU ĐỂ DỰNG BẢN ĐỒ ]
                   </div>
                 ) : (
                   <svg viewBox="0 0 400 240" className="w-full h-[240px] select-none">
@@ -770,9 +770,9 @@ export default function WorkspacePage() {
                 )}
 
                 <div className="absolute bottom-2 left-2 text-[8px] font-mono text-slate-500 flex gap-2">
-                  <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-cyan-500" />Core</span>
-                  <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-amber-500" />Tasks</span>
-                  <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-purple-500" />Notes</span>
+                  <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-cyan-500" />Trung tâm</span>
+                  <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-amber-500" />Nhiệm vụ</span>
+                  <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-purple-500" />Ghi chú</span>
                 </div>
               </div>
             </div>
@@ -782,9 +782,9 @@ export default function WorkspacePage() {
               <div>
                 <h3 className="text-xs font-bold text-slate-200 flex items-center gap-2 font-mono uppercase tracking-wider mb-2">
                   <Brain className="h-4 w-4 text-purple-400" />
-                  CHRONO_ACTIVITY_SYNAPSE
+                  BIỂU ĐỒ TẦN SUẤT HOẠT ĐỘNG
                 </h3>
-                <p className="text-[10px] text-slate-500 font-mono mb-4">Tần suất và mật độ hoạt động học tập (Nhiệm vụ & Ghi chú) trong 12 tuần</p>
+                <p className="text-[10px] text-slate-500 font-mono mb-4">Tần suất hoàn thành nhiệm vụ và lưu ghi chú trong 12 tuần qua</p>
 
                 <div className="flex flex-col items-center sm:items-start py-2 overflow-x-auto">
                   <div className="grid grid-flow-col grid-rows-7 gap-1">
@@ -800,7 +800,7 @@ export default function WorkspacePage() {
                           className={cn('w-3.5 h-3.5 rounded-sm transition-all duration-150 relative group cursor-pointer', colorClass)}
                         >
                           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-slate-950 text-slate-200 text-[8px] font-mono px-2 py-1 rounded shadow-lg border border-slate-800 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 z-50 whitespace-nowrap">
-                            {day.count} ACTS // {day.date.toLocaleDateString('vi-VN')}
+                            {day.count} HOẠT ĐỘNG // {day.date.toLocaleDateString('vi-VN')}
                           </div>
                         </div>
                       );
@@ -808,21 +808,21 @@ export default function WorkspacePage() {
                   </div>
 
                   <div className="flex justify-between w-full mt-2.5 px-1 text-[8px] font-mono text-slate-500 max-w-[280px] sm:max-w-md">
-                    <span>12 WEEKS AGO</span>
-                    <span>TODAY</span>
+                    <span>12 TUẦN TRƯỚC</span>
+                    <span>HÔM NAY</span>
                   </div>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-t border-slate-800 pt-4 mt-4 gap-2">
-                <span className="text-[8px] font-mono text-slate-500 uppercase">[ AUTO_CALIBRATING_CORE ]</span>
+                <span className="text-[8px] font-mono text-slate-500 uppercase">[ HỆ THỐNG ĐANG TỰ ĐỘNG CẬP NHẬT ]</span>
                 <div className="flex items-center gap-1.5 text-[8px] font-mono text-slate-500">
-                  <span>LESS</span>
+                  <span>ÍT HƠN</span>
                   <span className="w-3.5 h-3.5 rounded bg-slate-900/50 border border-slate-800" />
                   <span className="w-3.5 h-3.5 rounded bg-cyan-950 border border-cyan-800" />
                   <span className="w-3.5 h-3.5 rounded bg-cyan-700/60 border border-cyan-500/40" />
                   <span className="w-3.5 h-3.5 rounded bg-cyan-500 border border-cyan-400" />
-                  <span>MORE</span>
+                  <span>NHIỀU HƠN</span>
                 </div>
               </div>
             </div>

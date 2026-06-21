@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -15,6 +16,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Menu, LogOut, UserCircle2, Map, Home, BookOpen, PenTool, MessageSquare, LayoutDashboard, BookText, Headphones, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -34,6 +43,7 @@ const navLinks = [
 export function Header() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   const userName = session?.user?.name || 'Tài khoản';
   const userEmail = session?.user?.email || '';
@@ -51,6 +61,12 @@ export function Header() {
         <Link
           key={link.href}
           href={link.href}
+          onClick={(e) => {
+            if (link.href === '/workspace' && !session?.user) {
+              e.preventDefault();
+              setShowLoginModal(true);
+            }
+          }}
           className={cn(
             'flex items-center gap-2 text-sm font-semibold transition-all hover:text-primary-dark hover:scale-105',
             pathname === link.href ? 'text-primary-dark' : 'text-text-muted'
@@ -219,6 +235,39 @@ export function Header() {
           </Sheet>
         </div>
       </div>
+      {/* Login Requirement Modal for Workspace */}
+      <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
+        <DialogContent className="max-w-md rounded-2xl border border-rose-100 bg-white/95 p-6 shadow-2xl backdrop-blur-xl font-sans">
+          <DialogHeader className="space-y-3">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-50 border border-rose-200 text-rose-500">
+              <Sparkles className="h-6 w-6 animate-pulse" />
+            </div>
+            <DialogTitle className="text-center text-xl font-bold text-rose-950">
+              Yêu cầu đăng nhập
+            </DialogTitle>
+            <DialogDescription className="text-center text-sm text-rose-700">
+              Bạn cần đăng nhập tài khoản để sử dụng tính năng **Workspace** (Không gian học tập IELTS thông minh).
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 flex flex-col sm:flex-row gap-2 sm:justify-center">
+            <Button
+              variant="outline"
+              onClick={() => setShowLoginModal(false)}
+              className="rounded-full border-rose-200 text-rose-700 hover:bg-rose-50"
+            >
+              Hủy bỏ
+            </Button>
+            <Button
+              asChild
+              className="rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white hover:from-rose-600 hover:to-pink-600 border-none"
+            >
+              <Link href="/auth/login" onClick={() => setShowLoginModal(false)}>
+                Đăng nhập ngay
+              </Link>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }

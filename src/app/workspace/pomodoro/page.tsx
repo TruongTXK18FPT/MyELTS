@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, RotateCcw, CheckCircle, Clock, Volume2, VolumeX, ChevronDown, Sparkles, BookOpen, Music, Waves, CloudRain, Trees, ChevronLeft } from 'lucide-react';
+import { Play, Pause, RotateCcw, CheckCircle, Clock, Volume2, VolumeX, ChevronDown, Sparkles, BookOpen, Music, Waves, CloudRain, Trees, ChevronLeft, Radio, Headphones, Disc3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import NextImage from 'next/image';
 import cozyStudyBg from '@/assets/cozy_study_lofi.png';
 import Link from 'next/link';
+import { useMusic, type MusicTrackData } from '@/providers/MusicContext';
 
 type Task = {
   id: string;
@@ -34,6 +35,29 @@ export default function PomodoroPage() {
   const [ambientSound, setAmbientSound] = useState<'none' | 'rain' | 'waves' | 'forest'>('none');
   const [loading, setLoading] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  // Music Context state and local track list
+  const { play, playPlaylist, currentTrack, isPlaying } = useMusic();
+  const [importedTracks, setImportedTracks] = useState<MusicTrackData[]>([]);
+  const [loadingTracks, setLoadingTracks] = useState(true);
+
+  // Fetch all imported tracks from the database
+  useEffect(() => {
+    const fetchImportedTracks = async () => {
+      try {
+        const res = await fetch('/api/music/tracks?limit=100');
+        if (res.ok) {
+          const data = await res.json();
+          setImportedTracks(data.tracks || []);
+        }
+      } catch (err) {
+        console.error('Error fetching tracks inside Pomodoro:', err);
+      } finally {
+        setLoadingTracks(false);
+      }
+    };
+    void fetchImportedTracks();
+  }, []);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -439,6 +463,119 @@ export default function PomodoroPage() {
                     <span>{sound.label}</span>
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* Music Station links and embedded clips */}
+            <div className="rounded-xl border border-slate-800/80 bg-slate-950/60 p-4 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-slate-200 flex items-center gap-2 font-mono uppercase tracking-wider">
+                  <Headphones className="h-4 w-4 text-cyan-400" />
+                  MUSIC_STATION
+                </h3>
+                {importedTracks.length > 0 && (
+                  <button
+                    onClick={() => playPlaylist(importedTracks)}
+                    className="text-[9px] font-mono text-cyan-400 hover:text-cyan-300 font-bold hover:underline uppercase"
+                  >
+                    Phát tất cả ({importedTracks.length})
+                  </button>
+                )}
+              </div>
+
+              {/* Link to external music page */}
+              <Link
+                href="/music"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between text-[9px] font-mono text-cyan-400 hover:text-cyan-300 border border-cyan-500/20 bg-cyan-500/5 hover:bg-cyan-500/10 px-3 py-2.5 rounded-lg transition-all duration-150 w-full"
+                title="Đến trạm phát nhạc chính của MyELTS để đăng bài nhạc mới hoặc quản lý playlist"
+              >
+                <span className="flex items-center gap-1.5 text-[9px]">
+                  <Radio className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
+                  TRẠM PHÁT NHẠC CHÍNH
+                </span>
+                <span>[ ĐẾN TRẠM 🎧 ]</span>
+              </Link>
+
+              {/* Imported clips list */}
+              <div className="space-y-2">
+                <div className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">
+                  Nhạc học tập đã nhập
+                </div>
+
+                {loadingTracks ? (
+                  <div className="text-[9px] text-slate-500 font-mono italic animate-pulse py-2 text-center">
+                    Đang quét danh sách bài nhạc...
+                  </div>
+                ) : importedTracks.length === 0 ? (
+                  <div className="text-[9px] text-slate-500 font-mono py-4 text-center border border-dashed border-slate-800/80 rounded-lg">
+                    Chưa có nhạc nào được nhập.
+                    <Link href="/music" target="_blank" className="text-cyan-400 hover:underline block mt-1">
+                      Nhấp vào đây để thêm
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+                    {importedTracks.map((track) => {
+                      const isCurrent = currentTrack?.id === track.id;
+                      const isPlayingNow = isCurrent && isPlaying;
+                      return (
+                        <button
+                          key={track.id}
+                          onClick={() => play(track)}
+                          className={cn(
+                            "w-full flex items-center justify-between text-left p-2 rounded-lg border transition-all text-xs font-mono group",
+                            isCurrent
+                              ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-300"
+                              : "bg-slate-900/40 border-slate-800/50 text-slate-400 hover:border-slate-700 hover:text-slate-200"
+                          )}
+                        >
+                          <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
+                            {track.thumbnail ? (
+                              <div className="h-7 w-7 rounded overflow-hidden flex-shrink-0 relative">
+                                <img
+                                  src={track.thumbnail}
+                                  alt={track.title}
+                                  className="h-full w-full object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <div className="h-7 w-7 rounded bg-slate-800 flex-shrink-0 flex items-center justify-center">
+                                <Music className="h-3.5 w-3.5 text-cyan-500/70" />
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-[10px] font-bold text-slate-200 group-hover:text-cyan-300 transition-colors">
+                                {track.title}
+                              </p>
+                              {track.artist && (
+                                <p className="truncate text-[8px] text-slate-500 mt-0.5">
+                                  {track.artist}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex-shrink-0">
+                            {isPlayingNow ? (
+                              <div className="flex items-end gap-[2px] h-3.5 w-3.5">
+                                <span className="inline-block w-[2px] animate-bounce rounded-full bg-cyan-400" style={{ height: '8px', animationDelay: '0ms', animationDuration: '0.6s' }} />
+                                <span className="inline-block w-[2px] animate-bounce rounded-full bg-cyan-400" style={{ height: '14px', animationDelay: '150ms', animationDuration: '0.5s' }} />
+                                <span className="inline-block w-[2px] animate-bounce rounded-full bg-cyan-400" style={{ height: '6px', animationDelay: '300ms', animationDuration: '0.7s' }} />
+                              </div>
+                            ) : (
+                              <Play className={cn(
+                                "h-3.5 w-3.5 transition-colors",
+                                isCurrent ? "text-cyan-400" : "text-slate-600 group-hover:text-cyan-400"
+                              )} fill={isCurrent ? "currentColor" : "none"} />
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </div>

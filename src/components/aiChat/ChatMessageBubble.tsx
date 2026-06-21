@@ -1,12 +1,47 @@
 "use client";
 
+import { useState } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, User } from 'lucide-react';
+import { Loader2, User, Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatChatTime, type ChatMessageItem } from '@/lib/chat-utils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      type="button"
+      className="flex items-center gap-1.5 rounded px-2 py-1 text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition-all font-mono"
+    >
+      {copied ? (
+        <>
+          <Check className="h-3 w-3 text-emerald-400 animate-in fade-in zoom-in duration-150" />
+          <span className="text-emerald-400 font-semibold text-[10px]">Copied!</span>
+        </>
+      ) : (
+        <>
+          <Copy className="h-3 w-3 text-slate-400" />
+          <span className="text-[10px]">Copy</span>
+        </>
+      )}
+    </button>
+  );
+}
 import { TutorAvatar } from './TutorAvatar';
 import { EssayEvaluationCard } from './EssayEvaluationCard';
 import { AudioPlayer } from './AudioPlayer';
@@ -116,18 +151,94 @@ export function ChatMessageBubble({ message, tutorName, tutorEmoji, tutorAccent,
                     target="_blank"
                     rel="noreferrer noopener"
                     className={cn(
-                      'font-medium underline decoration-1 underline-offset-2',
-                      isFromUser ? 'text-rose-50' : 'text-rose-700 hover:text-rose-800'
+                      'font-semibold underline decoration-1 underline-offset-2 transition-colors',
+                      isFromUser 
+                        ? 'text-rose-100 hover:text-white' 
+                        : 'text-rose-600 hover:text-rose-700'
                     )}
                   >
                     {children}
                   </a>
                 ),
+                blockquote: ({ children }) => (
+                  <blockquote className={cn(
+                    'border-l-4 pl-3 py-1 my-2 rounded-r-lg italic font-sans',
+                    isFromUser 
+                      ? 'border-white bg-white/10 text-rose-50' 
+                      : 'border-rose-400 bg-rose-50/50 text-rose-800'
+                  )}>
+                    {children}
+                  </blockquote>
+                ),
+                ul: ({ children }) => <ul className="list-disc pl-4 space-y-1 my-1.5 font-sans">{children}</ul>,
+                ol: ({ children }) => <ol className="list-decimal pl-4 space-y-1 my-1.5 font-sans">{children}</ol>,
                 table: ({ children }) => (
-                  <div className="chat-markdown-table">
-                    <table>{children}</table>
+                  <div className={cn(
+                    'chat-markdown-table border my-2 overflow-x-auto rounded-xl max-w-full',
+                    isFromUser 
+                      ? 'border-rose-400 bg-rose-600/20' 
+                      : 'border-rose-100 bg-white/90'
+                  )}>
+                    <table className={cn(
+                      'min-w-full divide-y',
+                      isFromUser ? 'divide-rose-400' : 'divide-rose-100'
+                    )}>{children}</table>
                   </div>
                 ),
+                th: ({ children }) => (
+                  <th className={cn(
+                    'px-3 py-1.5 text-left text-xs font-bold font-mono',
+                    isFromUser 
+                      ? 'bg-rose-600/40 text-white border-b border-rose-450' 
+                      : 'bg-rose-50 text-rose-900 border-b border-rose-100'
+                  )}>
+                    {children}
+                  </th>
+                ),
+                td: ({ children }) => (
+                  <td className={cn(
+                    'px-3 py-1.5 text-xs border-b',
+                    isFromUser 
+                      ? 'text-rose-100 border-rose-500/20' 
+                      : 'text-rose-800 border-rose-50/50'
+                  )}>
+                    {children}
+                  </td>
+                ),
+                code: ({ className, children, ...props }) => {
+                  const match = /language-(\w+)/.exec(className || '');
+                  const isInline = !match && !String(children).includes('\n');
+                  
+                  if (isInline) {
+                    return (
+                      <code
+                        className={cn(
+                          'rounded px-1.5 py-0.5 font-mono text-[11px]',
+                          isFromUser 
+                            ? 'bg-white/20 text-white' 
+                            : 'bg-rose-100/80 text-rose-800'
+                        )}
+                        {...props}
+                      >
+                        {children}
+                      </code>
+                    );
+                  }
+                  
+                  return (
+                    <div className="my-2.5 overflow-hidden rounded-xl border border-slate-800 bg-slate-950 text-slate-100 shadow-md font-sans w-full">
+                      <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900/90 px-3 py-1.5 font-mono text-[9px] text-slate-400">
+                        <span className="font-semibold uppercase tracking-wider text-rose-400">
+                          {match ? match[1] : 'code'}
+                        </span>
+                        <CopyButton text={String(children).replace(/\n$/, '')} />
+                      </div>
+                      <pre className="overflow-x-auto p-3.5 font-mono text-[11px] leading-relaxed text-slate-300">
+                        <code>{children}</code>
+                      </pre>
+                    </div>
+                  );
+                }
               }}
             >
               {message.content}
