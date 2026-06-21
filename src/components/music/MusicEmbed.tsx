@@ -42,6 +42,7 @@ interface YTPlayer {
 interface MusicEmbedProps {
   url: string;
   platform: 'YOUTUBE' | 'SPOTIFY';
+  isPlaying?: boolean;
   compact?: boolean;
   className?: string;
   onEnded?: () => void;
@@ -78,7 +79,7 @@ function loadYouTubeAPI(): Promise<void> {
   });
 }
 
-export function MusicEmbed({ url, platform, compact = false, className = '', onEnded }: MusicEmbedProps) {
+export function MusicEmbed({ url, platform, isPlaying = false, compact = false, className = '', onEnded }: MusicEmbedProps) {
   const playerRef = useRef<YTPlayer | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const onEndedRef = useRef(onEnded);
@@ -114,7 +115,7 @@ export function MusicEmbed({ url, platform, compact = false, className = '', onE
         playerRef.current = new window.YT.Player(playerDiv.id, {
           videoId,
           playerVars: {
-            autoplay: 1,
+            autoplay: isPlaying ? 1 : 0,
             rel: 0,
             modestbranding: 1,
             playsinline: 1,
@@ -158,6 +159,23 @@ export function MusicEmbed({ url, platform, compact = false, className = '', onE
       }
     };
   }, [url, platform, initYouTubePlayer]);
+
+  // Synchronize playing state with YouTube Player
+  useEffect(() => {
+    if (platform !== 'YOUTUBE' || !playerRef.current) return;
+    try {
+      const state = playerRef.current.getPlayerState();
+      // YT PlayerState: 1 = PLAYING, 2 = PAUSED
+      if (isPlaying && state !== 1) {
+        playerRef.current.playVideo();
+      } else if (!isPlaying && state === 1) {
+        playerRef.current.pauseVideo();
+      }
+    } catch (err) {
+      // In case player state is not ready yet
+      console.warn('YouTube Player not ready for play/pause sync:', err);
+    }
+  }, [isPlaying, platform, url]);
 
   if (platform === 'YOUTUBE') {
     const videoId = extractYouTubeId(url);

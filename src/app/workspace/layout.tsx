@@ -33,6 +33,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { PomodoroProvider } from '@/providers/PomodoroContext';
+import { PomodoroFloatingWidget } from '@/components/workspace/PomodoroFloatingWidget';
 
 const sidebarLinks = [
   { href: '/workspace', label: 'COMMAND_CENTER', icon: BarChart3, index: 'SYS_01', exact: true },
@@ -140,7 +142,8 @@ export default function WorkspaceLayout({
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-slate-950 text-slate-100 font-mono relative overflow-hidden select-none">
+    <PomodoroProvider>
+      <div className="flex min-h-screen w-full bg-slate-950 text-slate-100 font-mono relative overflow-hidden select-none">
       {/* Sci-Fi Tech Background Grid */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-35 pointer-events-none z-0" />
       {/* Holographic glowing blobs */}
@@ -245,6 +248,9 @@ export default function WorkspaceLayout({
 
       {/* Floating AI Companion Chat */}
       <AIChatWidget />
+      {/* Floating Pomodoro PIP Widget */}
+      <PomodoroFloatingWidget />
     </div>
+    </PomodoroProvider>
   );
 }

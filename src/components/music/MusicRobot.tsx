@@ -189,9 +189,15 @@ export function MusicRobot() {
               <MusicEmbed
                 url={currentTrack.url}
                 platform={currentTrack.platform}
+                isPlaying={isPlaying}
                 compact
                 onEnded={handleTrackEnded}
               />
+              {currentTrack.platform === 'SPOTIFY' && (
+                <p className="text-[9px] text-pink-400 font-mono text-center mt-1.5 animate-pulse">
+                  * Với nhạc Spotify, hãy nhấp nút Phát trực tiếp trong khung
+                </p>
+              )}
 
               <div className="mt-2.5 space-y-2 sm:mt-3">
                 <div className="text-center">
