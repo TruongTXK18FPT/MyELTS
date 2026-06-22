@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { getYouTubeEmbedUrl, getSpotifyEmbedUrl, extractYouTubeId, extractSpotifyId } from '@/lib/music-utils';
 
 // Declare YouTube IFrame API types
@@ -55,7 +55,9 @@ const ytReadyCallbacks: (() => void)[] = [];
 
 function loadYouTubeAPI(): Promise<void> {
   return new Promise((resolve) => {
-    if (ytApiReady) {
+    // If the YT script has loaded and window.YT / YT.Player is fully initialized, resolve immediately
+    if (ytApiReady || (typeof window !== 'undefined' && window.YT && window.YT.Player)) {
+      ytApiReady = true;
       resolve();
       return;
     }
@@ -83,11 +85,18 @@ export function MusicEmbed({ url, platform, isPlaying = false, compact = false, 
   const playerRef = useRef<YTPlayer | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const onEndedRef = useRef(onEnded);
+  const [isPlayerReady, setIsPlayerReady] = useState(false);
 
   // Keep callback ref updated
   useEffect(() => {
     onEndedRef.current = onEnded;
   }, [onEnded]);
+
+  // Keep isPlaying ref updated to prevent stale closures inside callbacks
+  const isPlayingRef = useRef(isPlaying);
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
 
   const initYouTubePlayer = useCallback((videoId: string) => {
     // Clean up previous player
@@ -99,6 +108,9 @@ export function MusicEmbed({ url, platform, isPlaying = false, compact = false, 
       }
       playerRef.current = null;
     }
+
+    // Reset player ready state
+    setIsPlayerReady(false);
 
     if (!containerRef.current) return;
 
@@ -115,12 +127,22 @@ export function MusicEmbed({ url, platform, isPlaying = false, compact = false, 
         playerRef.current = new window.YT.Player(playerDiv.id, {
           videoId,
           playerVars: {
-            autoplay: isPlaying ? 1 : 0,
+            autoplay: isPlayingRef.current ? 1 : 0,
             rel: 0,
             modestbranding: 1,
             playsinline: 1,
           },
           events: {
+            onReady: (event) => {
+              setIsPlayerReady(true);
+              if (isPlayingRef.current) {
+                try {
+                  event.target.playVideo();
+                } catch (err) {
+                  console.warn('YouTube Player autoplay onReady block:', err);
+                }
+              }
+            },
             onStateChange: (event) => {
               // State 0 = ENDED
               if (event.data === 0) {
@@ -162,7 +184,7 @@ export function MusicEmbed({ url, platform, isPlaying = false, compact = false, 
 
   // Synchronize playing state with YouTube Player
   useEffect(() => {
-    if (platform !== 'YOUTUBE' || !playerRef.current) return;
+    if (platform !== 'YOUTUBE' || !playerRef.current || !isPlayerReady) return;
     try {
       const state = playerRef.current.getPlayerState();
       // YT PlayerState: 1 = PLAYING, 2 = PAUSED
@@ -175,7 +197,7 @@ export function MusicEmbed({ url, platform, isPlaying = false, compact = false, 
       // In case player state is not ready yet
       console.warn('YouTube Player not ready for play/pause sync:', err);
     }
-  }, [isPlaying, platform, url]);
+  }, [isPlaying, platform, url, isPlayerReady]);
 
   if (platform === 'YOUTUBE') {
     const videoId = extractYouTubeId(url);
